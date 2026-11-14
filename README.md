@@ -1,8 +1,10 @@
 # Muelle 03
 
-FPS de un solo nivel en three.js r128. El escenario, las texturas y el audio son procedurales; el único asset externo es `soldado.glb`, el modelo animado de los enemigos.
+FPS por niveles en three.js r128. El escenario, las texturas y el audio son procedurales; el único asset externo es `soldado.glb`, el modelo animado de los enemigos.
 
-Un muelle de noche y con lluvia; hay que aguantar tres oleadas de un equipo de asalto.
+Un puerto de noche y con lluvia. La campaña tiene diez niveles de tres oleadas cada uno; al despejar una zona se abre el portón hacia la siguiente. Por ahora hay dos zonas (patio de contenedores y playa ferroviaria) que se alternan. El progreso se guarda en el navegador.
+
+Creado por Fernando Cañete.
 
 ## Jugar
 
