@@ -105,7 +105,7 @@ body.play #ov{opacity:0;pointer-events:none}
 
 <div id="ov">
   <h1 id="ovT"><span>Zona portuaria, 03:14, lluvia</span>Muelle 03</h1>
-  <p id="ovP">Un equipo de asalto ha tomado el depósito y viene a por ti. Aguanta tres oleadas en el patio de carga.</p>
+  <p id="ovP">Un equipo de asalto ha tomado el depósito y viene a por ti. Aguanta tres oleadas en el muelle.</p>
   <p id="ovK" class="k"></p>
   <div id="acts"><button id="go" disabled>Preparando el patio…</button><button id="fs" hidden>Pantalla completa</button></div>
 </div>
@@ -145,7 +145,7 @@ else{renderer.outputEncoding=T.sRGBEncoding;renderer.toneMapping=T.ACESFilmicTon
 const maxDpr=Math.min(window.devicePixelRatio||1,LOW?1.25:1.6);let dpr=maxDpr;
 const scene=new T.Scene();
 const FOGC=new T.Color(.022,.03,.048);
-scene.fog=new T.FogExp2(FOGC.getHex(),.0135);scene.fog.color.copy(FOGC);
+scene.fog=new T.FogExp2(FOGC.getHex(),.0125);scene.fog.color.copy(FOGC);
 const camera=new T.PerspectiveCamera(72,1,.15,520);camera.rotation.order='YXZ';
 const timeU={value:0};
 const maxAniso=renderer.capabilities.getMaxAnisotropy();
@@ -261,14 +261,14 @@ function lamp(x,z,dir,flick){
   const vm=volMat(new T.Color(1,.58,.26).multiplyScalar(.11),6.75),cone=new T.Mesh(new T.ConeGeometry(4.4,6.75,36,1,true),vm);cone.position.set(hx+dir*.4,3.375,z);scene.add(cone);vols.push(cone);
   addCol(x,z,.22,.22,0,7);lamps.push({s,lm,vm,flick,base:360,pos:new V3(hx,6.75,z),k:1})}
 function contactShadow(x,z,w,d,rot){const m=new T.Mesh(new T.PlaneGeometry(w+1.1,d+1.1),M.cs);m.rotation.x=-Math.PI/2;m.rotation.z=rot||0;m.position.set(x,.012,z);m.renderOrder=2;world.add(m)}
-function container(x,y,z,rot,mat,labelTex){
+function container(x,y,z,rot,mat,labelTex,lite){
   const g=new T.Group();g.position.set(x,y,z);g.rotation.y=rot;world.add(g);const Lc=6.06,Hc=2.59,Wc=2.44;
   B(Lc,Hc,Wc,mat,0,Hc/2,0,{parent:g});
   for(const sx of[-1,1])for(const sz of[-1,1])B(.13,Hc+.03,.13,M.frame,sx*(Lc/2-.04),Hc/2,sz*(Wc/2-.04),{parent:g});
-  for(const sz of[-1,1]){B(Lc,.1,.1,M.frame,0,.05,sz*(Wc/2-.03),{parent:g});B(Lc,.1,.1,M.frame,0,Hc-.04,sz*(Wc/2-.03),{parent:g})}
+  if(!lite){for(const sz of[-1,1]){B(Lc,.1,.1,M.frame,0,.05,sz*(Wc/2-.03),{parent:g});B(Lc,.1,.1,M.frame,0,Hc-.04,sz*(Wc/2-.03),{parent:g})}
   for(const zz of[-.78,-.3,.3,.78])C(.022,.022,Hc-.3,M.metal,Lc/2+.035,Hc/2,zz,{parent:g,seg:8});
   for(const zz of[-.54,.54])B(.035,.06,.46,M.metal,Lc/2+.06,1.15,zz,{parent:g});
-  B(.014,Hc-.2,.025,M.black,Lc/2+.008,Hc/2,0,{parent:g,cast:false});
+  }B(.014,Hc-.2,.025,M.black,Lc/2+.008,Hc/2,0,{parent:g,cast:false});
   if(labelTex){const p=new T.Mesh(new T.PlaneGeometry(2.6,1.3),new T.MeshStandardMaterial({map:labelTex,transparent:true,roughness:.5,metalness:0,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));p.position.set(-.9,1.45,Wc/2+.006);g.add(p);
     const p2=p.clone();p2.rotation.y=Math.PI;p2.position.set(.9,1.45,-Wc/2-.006);g.add(p2)}
   addCol(x,z,Lc,Wc,y,y+Hc,rot);if(y===0)contactShadow(x,z,Lc,Wc,rot)}
@@ -288,6 +288,22 @@ function barrier(x,z,rot){const sh=new T.Shape();[[-.3,0],[-.3,.12],[-.13,.42],[
   const st=new T.Mesh(new T.PlaneGeometry(2.9,.22),M.hazard);st.position.set(.136,.6,0);st.rotation.y=Math.PI/2;st.rotation.x=0;const sg=new T.Group();sg.position.set(x,0,z);sg.rotation.y=rot;sg.add(st);const st2=st.clone();st2.position.x=-.136;st2.rotation.y=-Math.PI/2;sg.add(st2);world.add(sg);
   addCol(x,z,.6,3,0,.85,rot);contactShadow(x,z,.5,3,rot)}
 
+function softCol(x,z,w,d,y0,y1,rot){addCol(x,z,w,d,y0,y1,rot);cols[cols.length-1].soft=true}
+function rail(x1,z1,x2,z2,y,col){const dx=x2-x1,dz=z2-z1,len=Math.hypot(dx,dz),ax=Math.abs(dx)>Math.abs(dz),mx=(x1+x2)/2,mz=(z1+z2)/2,o=ax?{rz:Math.PI/2,seg:6,cast:false}:{rx:Math.PI/2,seg:6,cast:false};
+  C(.024,.024,len,M.rail,mx,y+1.05,mz,o);C(.016,.016,len,M.rail,mx,y+.55,mz,o);
+  const n=Math.max(1,Math.round(len/2));for(let i=0;i<=n;i++)C(.024,.024,1.05,M.rail,x1+dx*i/n,y+.525,z1+dz*i/n,{seg:6,cast:false});
+  if(col!==false)softCol(mx,mz,ax?len:.08,ax?.08:len,y,y+1.1)}
+function stairs(x0,z0,rot,H,w){const n=Math.round(H/.2),rise=H/n,run=.3,c=Math.cos(rot),s=Math.sin(rot),g=new T.Group();g.position.set(x0,0,z0);g.rotation.y=rot;world.add(g);
+  const W2=(lx,lz)=>[x0+lx*c+lz*s,z0-lx*s+lz*c];
+  for(let i=0;i<n;i++){B(run+.02,.045,w,M.grate,(i+.5)*run,(i+1)*rise-.022,0,{parent:g});const q=W2((i+.5)*run,0);addCol(q[0],q[1],run,w,0,(i+1)*rise,rot)}
+  const L=n*run,sl=Math.hypot(L,H),ang=Math.atan2(H,L);
+  for(const sz of[-1,1]){const lz=sz*(w/2+.03);B(sl,.24,.05,M.metalDk,L/2,H/2-.13,lz,{parent:g,rz:ang});B(sl,.045,.045,M.rail,L/2,H/2+1,lz,{parent:g,rz:ang,cast:false});
+    for(let i=0;i<=n;i+=4){const lx=Math.min(L-.06,(i+.5)*run);C(.022,.022,1,M.rail,lx,lx/L*H+.5,lz,{parent:g,seg:6,cast:false})}
+    const q=W2(L/2,sz*(w/2+.07));softCol(q[0],q[1],L,.06,0,H+1,rot)}
+  const q=W2(L/2,0);contactShadow(q[0],q[1],L,w,rot)}
+function deck(x,z,w,d,H){B(w,.12,d,M.grate,x,H-.06,z);addCol(x,z,w,d,H-.14,H);
+  for(const sx of[-1,1])for(const sz of[-1,1]){const px=x+sx*(w/2-.2),pz=z+sz*(d/2-.2);B(.16,H-.12,.16,M.metal,px,(H-.12)/2,pz);addCol(px,pz,.16,.16,0,H-.12)}
+  for(const sz of[-1,1])B(w,.2,.1,M.metal,x,H-.22,z+sz*(d/2-.2))}
 let skyMat,rain,rainMat,beacon;
 function buildWorld(){
   TX=makeTextures();
@@ -305,12 +321,12 @@ function buildWorld(){
   { // charcos
     const c=mkCanvas(256),x=c.getContext('2d'),id=x.createImageData(256,256);
     for(let j=0,i=0;j<256;j++)for(let k=0;k<256;k++,i+=4){const u=k/256,v=j/256;let p=sst(.46,.56,fbm(u+.13,v+.4,5,4))*.97;p=Math.max(p,sst(.56,.64,fbm(u+.7,v+.2,12,3))*.85);const q=p*255;id.data[i]=id.data[i+1]=id.data[i+2]=q;id.data[i+3]=255}
-    x.putImageData(id,0,0);pudTex=new T.CanvasTexture(c);pudTex.wrapS=pudTex.wrapT=T.ClampToEdgeWrapping}
+    x.putImageData(id,0,0);pudTex=new T.CanvasTexture(c);pudTex.wrapS=pudTex.wrapT=T.RepeatWrapping}
 
   // suelo
-  for(const k of['map','normalMap','orm'])TX.floor[k].repeat.set(27.4/5,35.4/5);
+  for(const k of['map','normalMap','orm'])TX.floor[k].repeat.set(61.2/5,93/5);
   M.floor=wetify(new T.MeshStandardMaterial({map:TX.floor.map,normalMap:TX.floor.normalMap,roughnessMap:TX.floor.orm,roughness:1,metalness:0,normalScale:new T.Vector2(1,1)}));
-  const fl=new T.Mesh(new T.PlaneGeometry(27.4,35.4),M.floor);fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;world.add(fl);
+  const fl=new T.Mesh(new T.PlaneGeometry(61.2,93),M.floor);fl.rotation.x=-Math.PI/2;fl.position.z=28.5;fl.receiveShadow=true;world.add(fl);
   // marcas viales
   const mark=(tex,w,d,x,z,rot)=>{const m=new T.Mesh(new T.PlaneGeometry(w,d),wetify(new T.MeshStandardMaterial({map:tex,transparent:true,roughness:.55,metalness:0,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2})));m.rotation.x=-Math.PI/2;m.rotation.z=rot||0;m.position.set(x,.006,z);m.receiveShadow=true;m.renderOrder=1;world.add(m)};
   const lineT=textTex(32,1024,(x,w,h)=>{x.fillStyle='#d9a31a';x.fillRect(4,0,w-8,h)},.38);
@@ -320,13 +336,10 @@ function buildWorld(){
   mark(textTex(512,128,(x,w,h)=>{x.fillStyle='#d8dadc';x.font='900 92px '+FONT;x.fillText('SOLO CARGA',w/2,h/2+6)},.44),4.6,1.15,7,-13.6);
 
   // muros perimetrales
-  for(const sx of[-1,1]){B(.6,5,35.6,M.conc,sx*13.8,2.5,0);B(.76,.12,35.6,M.metalDk,sx*13.8,5.06,0);addCol(sx*13.8,0,.6,35.6,0,30);
-    C(.05,.05,33,M.metal,sx*13.44,3.3,0,{rx:Math.PI/2,seg:8});C(.035,.035,33,M.metalDk,sx*13.45,3.52,0,{rx:Math.PI/2,seg:8});
-    for(const zz of[-9,2,11]){B(.1,.16,.34,M.metalDk,sx*13.46,3.95,zz);B(.04,.1,.26,glow(1,.8,.55,5),sx*13.4,3.95,zz,{cast:false})}}
-  B(28.2,5,.6,M.conc,0,2.5,17.9);B(28.2,.12,.76,M.metalDk,0,5.06,17.9);addCol(0,17.9,28.2,.6,0,30);
+  B(.6,5,68.6,M.conc,-30.3,2.5,16.3);B(.76,.12,68.6,M.metalDk,-30.3,5.06,16.3);addCol(-30.3,16.3,.6,68.6,0,30);
   // edificio norte
-  B(28.2,10,1,M.concDk,0,5,-18.1);addCol(0,-18.1,28.2,1,0,30);B(28.4,.3,1.25,M.metalDk,0,10.15,-18.05);
-  B(28.2,.45,.12,M.conc,0,.225,-17.56);
+  B(61.2,10,1,M.concDk,0,5,-18.1);addCol(0,-18.1,61.2,1,0,30);B(61.4,.3,1.25,M.metalDk,0,10.15,-18.05);
+  B(61.2,.45,.12,M.conc,0,.225,-17.56);
   B(6.1,5.1,.2,M.metalDk,-5,2.55,-17.55);B(5.5,4.7,.14,M.shutter,-5,2.35,-17.46);
   for(const bx of[-8.5,-1.5]){C(.11,.11,1.1,M.pRed,bx,.55,-16.2,{seg:14});addCol(bx,-16.2,.24,.24,0,1.1)}
   { const p=new T.Mesh(new T.PlaneGeometry(1.9,1.1),new T.MeshStandardMaterial({map:textTex(256,148,(x,w,h)=>{x.fillStyle='#16181b';x.fillRect(0,0,w,h);x.strokeStyle='#cfd2d6';x.lineWidth=5;x.strokeRect(8,8,w-16,h-16);x.fillStyle='#e6e8ea';x.font='900 112px '+FONT;x.fillText('03',w/2,h/2+8)}),roughness:.45}));p.position.set(-5,5.95,-17.58);world.add(p)}
@@ -339,7 +352,7 @@ function buildWorld(){
   L.canopy=new T.PointLight(new T.Color(.72,.92,1),38,13,2);L.canopy.position.set(6,2.55,-16.5);scene.add(L.canopy);
   // ventanas
   const blind=new T.MeshBasicMaterial({map:textTex(64,64,(x,w,h)=>{x.fillStyle='#e8b877';x.fillRect(0,0,w,h);x.fillStyle='#5a3c1c';for(let i=0;i<16;i++)x.fillRect(0,i*4,w,1.5);x.fillStyle='rgba(0,0,0,.55)';x.fillRect(40,20,14,44)}),color:new T.Color(2.4,2.1,1.7),fog:false});
-  [-10.5,-6.6,-2.7,1.2,5.1,9].forEach((wx,i)=>{B(2.5,1.5,.1,M.metalDk,wx,7.3,-17.58);B(2.3,1.3,.06,(i===1||i===4)?blind:M.glass,wx,7.3,-17.55,{cast:false})});
+  [-26.1,-22.2,-18.3,-14.4,-10.5,-6.6,-2.7,1.2,5.1,9,13.2,17.1,21,24.9].forEach((wx,i)=>{B(2.5,1.5,.1,M.metalDk,wx,7.3,-17.58);B(2.3,1.3,.06,(i===2||i===5||i===8||i===12)?blind:M.glass,wx,7.3,-17.55,{cast:false})});
   // foco del muelle (luz principal con sombras)
   B(.12,.5,.5,M.metal,0,8.6,-17.4);B(2.2,.4,.34,M.metalDk,0,8.5,-17.1,{rx:.5});
   for(const fx of[-.7,0,.7])B(.5,.26,.03,glow(.8,.9,1,22),fx,8.42,-16.94,{rx:.5,cast:false,recv:false});
@@ -374,6 +387,79 @@ function buildWorld(){
   // luz ambiente
   L.hemi=new T.HemisphereLight(new T.Color(.2,.26,.42),new T.Color(.09,.07,.06),.9);scene.add(L.hemi);
 
+  // ===== ampliación: muelle abierto, grúas, barco y zonas elevadas =====
+  M.rail=pbrMat(TX.pWhite,{color:new T.Color(1,.72,.1)},1,1);M.crane=pbrMat(TX.pWhite,{color:new T.Color(1,.42,.1)},4,4);M.grate=pbrMat(TX.shutter,{color:new T.Color(.8,.82,.86)},.5,.5);
+  const LK=lab('KRONOS','KRLU 305771 4','#e9edf0'),LH=lab('HALCÓN','HLCU 218840 6','#f0e6da'),LA=lab('AUSTRAL','ASTU 774102 9','#1b1b1b');
+  const poolT=(()=>{const c=mkCanvas(64),x=c.getContext('2d'),g=x.createRadialGradient(32,32,0,32,32,32);g.addColorStop(0,'rgba(255,255,255,.6)');g.addColorStop(1,'rgba(255,255,255,0)');x.fillStyle=g;x.fillRect(0,0,64,64);return new T.CanvasTexture(c)})();
+  const pool=(x,z,r,col)=>{const m=new T.Mesh(new T.PlaneGeometry(r*2,r*2),new T.MeshBasicMaterial({map:poolT,color:col,transparent:true,blending:T.AdditiveBlending,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-3}));m.rotation.x=-Math.PI/2;m.position.set(x,.016,z);m.renderOrder=2;world.add(m)};
+  // puertas de muelle 02 y 04
+  for(const dd of[[-21,'02'],[21,'04']]){const dx=dd[0];B(6.1,5.1,.2,M.metalDk,dx,2.55,-17.55);B(5.5,4.7,.14,M.shutter,dx,2.35,-17.46);
+    for(const bx of[dx-3.5,dx+3.5]){C(.11,.11,1.1,M.pRed,bx,.55,-16.2,{seg:14});addCol(bx,-16.2,.24,.24,0,1.1)}
+    const p=new T.Mesh(new T.PlaneGeometry(1.9,1.1),new T.MeshStandardMaterial({map:textTex(256,148,(x,w,h)=>{x.fillStyle='#16181b';x.fillRect(0,0,w,h);x.strokeStyle='#cfd2d6';x.lineWidth=5;x.strokeRect(8,8,w-16,h-16);x.fillStyle='#e6e8ea';x.font='900 112px '+FONT;x.fillText(dd[1],w/2,h/2+8)}),roughness:.45}));p.position.set(dx,5.95,-17.58);world.add(p)}
+  // valla sur
+  { const fc=mkCanvas(64),x=fc.getContext('2d');x.strokeStyle='rgba(185,195,205,.95)';x.lineWidth=2.2;for(let i=-64;i<=128;i+=32){x.beginPath();x.moveTo(i,0);x.lineTo(i+64,64);x.stroke();x.beginPath();x.moveTo(i+64,0);x.lineTo(i,64);x.stroke()}
+    const ft=new T.CanvasTexture(fc);ft.wrapS=ft.wrapT=T.RepeatWrapping;ft.anisotropy=Math.min(8,maxAniso);ft.encoding=T.sRGBEncoding;ft.repeat.set(61.2/.28,3/.28);
+    const fm=new T.Mesh(new T.PlaneGeometry(61.2,3),new T.MeshStandardMaterial({map:ft,transparent:true,side:T.DoubleSide,roughness:.45,metalness:.7,depthWrite:false}));fm.position.set(0,1.5,50.3);world.add(fm);
+    for(let x2=-30;x2<=30;x2+=3)C(.04,.04,3.1,M.metal,x2,1.55,50.3,{seg:6,cast:false});
+    C(.03,.03,61.2,M.metal,0,3,50.3,{rz:Math.PI/2,seg:6,cast:false});softCol(0,50.3,61.2,.2,0,8);
+    // pilas lejanas tras la valla
+    const cm=[M.cBlue,M.cRed,M.cOchre,M.cTeal];for(let i=0;i<9;i++){const h=2.59*(1+(i*5)%3);B(12.12,h,2.44,cm[i%4],-26+i*6.6+(i%2)*1.5,h/2,57+(i%3)*5.5,{cast:false})}
+    for(const lx of[-18,10]){C(.09,.12,9,M.metal,lx,4.5,54,{cast:false});B(.8,.14,.4,glow(1,.62,.28,14),lx,9,54,{cast:false,recv:false});pool(lx,54.5,8,new T.Color(.2,.115,.045))}}
+  // cantil del muelle, baranda y agua
+  B(.6,2.4,93,M.conc,30.6,-1.2,28.5,{cast:false});B(.5,.3,93,M.conc,30.35,.15,28.5,{cast:false});
+  rail(29.9,-17.4,29.9,50.2,0,false);softCol(29.95,16.4,.12,68,0,8);
+  for(let z2=-12;z2<=48;z2+=12){C(.2,.26,.5,M.metalDk,29.2,.25,z2,{seg:12});C(.3,.3,.08,M.metalDk,29.2,.52,z2,{seg:12,cast:false});addCol(29.2,z2,.5,.5,0,.56)}
+  { const g=new T.PlaneGeometry(500,420),uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*70,uv.getY(i)*60);
+    const wm=new T.Mesh(g,new T.MeshStandardMaterial({color:lin(.03,.045,.06),roughness:.1,metalness:0,normalMap:TX.conc.normalMap,normalScale:new T.Vector2(.5,.5),envMapIntensity:1.3}));wm.rotation.x=-Math.PI/2;wm.position.set(280.8,-1.7,20);world.add(wm)}
+  // barco atracado
+  { const hull=new T.MeshStandardMaterial({color:lin(.09,.1,.13),roughness:.55,metalness:.2});
+    B(26,12,150,hull,57,3.2,20,{cast:false});B(26.1,1.1,150.1,M.pRed,57,-1.2,20,{cast:false,tu:4,tv:4});
+    const cm=[M.cRed,M.cBlue,M.cOchre,M.cTeal,M.cBlue,M.cRed,M.cOchre,M.cTeal];for(let i=0;i<8;i++){const h=2.59*(2+(i*7)%3);B(22,h,12.2,cm[i],57,9.2+h/2,-38+i*13.6,{cast:false})}
+    B(24,15,10,M.white,57,16.7,88,{cast:false});B(10,4,6,M.white,57,26,88,{cast:false});
+    const wt=textTex(128,64,(x,w,h)=>{x.fillStyle='#000';x.fillRect(0,0,w,h);for(let j=0;j<4;j++)for(let i=0;i<12;i++)if((i*7+j*5)%4){x.fillStyle=(i+j)%3?'#ffd9a0':'#cfe6ff';x.fillRect(i*10.6+2,j*15+4,7,7)}}),wmat=new T.MeshBasicMaterial({map:wt,color:new T.Color(1.5,1.4,1.2),fog:false,transparent:true,blending:T.AdditiveBlending,depthWrite:false});
+    const w1=new T.Mesh(new T.PlaneGeometry(9,9),wmat);w1.rotation.y=-Math.PI/2;w1.position.set(44.9,18.5,88);world.add(w1);const w2=new T.Mesh(new T.PlaneGeometry(22,9),wmat);w2.rotation.y=Math.PI;w2.position.set(57,18.5,82.9);world.add(w2);
+    for(const z2 of[-50,20,92]){const b=new T.Mesh(new T.SphereGeometry(.3,6,6),glow(1,.95,.8,8));b.position.set(57,z2===92?29.5:22,z2);world.add(b);if(z2!==92)C(.08,.1,6,M.metalDk,57,19,z2,{cast:false})}}
+  // grúas pórtico
+  const crane=(zc)=>{const o={cast:false},X0=19,X1=28,Y=27;
+    for(const x of[X0,X1])for(const sz of[-1,1]){const z=zc+sz*7;B(1.1,Y,1.1,M.crane,x,Y/2,z);addCol(x,z,1.1,1.1,0,Y);B(1.6,.55,3.4,M.metalDk,x,.275,z);addCol(x,z,1.6,3.4,0,.55);contactShadow(x,z,1.6,3.4)}
+    for(const x of[X0,X1]){B(.9,1.2,14,M.crane,x,9,zc,o);B(.9,1.4,14,M.crane,x,Y-.7,zc,o)}
+    for(const sz of[-1,1]){B(X1-X0,1,.8,M.crane,(X0+X1)/2,Y-.5,zc+sz*7,o);const Ld=Math.hypot(X1-X0,Y-10.5);B(Ld,.45,.45,M.crane,(X0+X1)/2,(Y+9.5)/2,zc+sz*7,{cast:false,rz:Math.atan2(Y-10.5,X1-X0)*sz})}
+    for(const sz of[-1,1])B(58,1.8,.9,M.crane,37,Y+1.6,zc+sz*2.6,o);
+    for(let x=10;x<=64;x+=6)B(.45,.45,5.2,M.crane,x,Y+1.1,zc,o);
+    B(.8,13,.8,M.crane,X1,Y+9,zc-2.6,o);B(.8,13,.8,M.crane,X1,Y+9,zc+2.6,o);B(.8,.8,6,M.crane,X1,Y+15.5,zc,o);
+    const stay=(xa,ya,xb,yb)=>{const Ls=Math.hypot(xb-xa,yb-ya);for(const sz of[-1,1])B(Ls,.2,.2,M.metalDk,(xa+xb)/2,(ya+yb)/2,zc+sz*2.6,{cast:false,rz:Math.atan2(yb-ya,xb-xa)})};
+    stay(X1,Y+15.5,65,Y+2.6);stay(X1,Y+15.5,46,Y+2.6);stay(X1,Y+15.5,9,Y+2.6);
+    B(9,3.4,5.6,M.white,14,Y+4.2,zc,o);
+    const tx=53;B(4,1,5.6,M.metalDk,tx,Y+.3,zc,o);B(2.2,2.2,2.4,M.white,tx-3.4,Y-1.4,zc,o);B(.05,1.1,1.8,glow(1,.85,.6,3),tx-4.52,Y-1.3,zc,{cast:false,recv:false});
+    for(const sx of[-1,1])for(const sz of[-1,1])C(.03,.03,Y-21.6,M.black,tx+sx*2.6,(Y+21.6)/2,zc+sz*1,{seg:5,cast:false});
+    B(6.2,.3,2.5,M.rail,tx,21.45,zc,o);B(6.06,2.59,2.44,M.cTeal,tx,20,zc,o);
+    for(const x of[14,24,36,60])for(const sz of[-1,1])B(.9,.14,.5,glow(1,.92,.75,10),x,Y+.62,zc+sz*2.6,{cast:false,recv:false});
+    pool(14,zc,8,new T.Color(.1,.092,.075));pool(24,zc,9,new T.Color(.1,.092,.075));
+    for(const b of[[X1,Y+16.2],[66,Y+2.9],[8.5,Y+2.9]]){const m=new T.Mesh(new T.SphereGeometry(.28,6,6),glow(1,.1,.05,8));m.position.set(b[0],b[1],zc);world.add(m)}};
+  crane(-4);crane(30);
+  for(const x of[18.65,19.35,27.65,28.35])B(.1,.05,68,M.metal,x,.025,16.3,{cast:false});
+  // complejo A (oeste): fila de contenedores con escalera
+  container(-24,0,-8,Math.PI/2,M.cBlue,LK,true);container(-24,0,-1.94,Math.PI/2,M.cOchre,LA,true);container(-24,0,4.12,Math.PI/2,M.cRed,LH,true);
+  container(-21.56,0,-1.94,Math.PI/2,M.cTeal,LK,true);container(-21.56,0,4.12,Math.PI/2,M.cBlue,LK,true);container(-24,2.59,-8,Math.PI/2+.03,M.cRed,LH,true);
+  stairs(-24,11.05,Math.PI/2,2.59,1.1);crate(-21.6,2.59,2.2,.3,1.2,.8,.9,true);crate(-23.7,2.59,-3.6,-.1,1.3,.8,.9);
+  // complejo B (sur): plataforma, pasarela y contenedores
+  deck(1,33,10,4,2.6);stairs(-7.9,32,0,2.6,1.1);
+  rail(-4,31,6,31,2.6);rail(-4,35,6,35,2.6);rail(-4,32.6,-4,35,2.6);rail(6,31,6,32.45,2.6);rail(6,33.55,6,35,2.6);
+  B(4.5,.12,1.1,M.grate,8.25,2.54,33);addCol(8.25,33,4.5,1.1,2.46,2.6);rail(6,32.45,10.5,32.45,2.6);rail(6,33.55,10.5,33.55,2.6);
+  container(11.72,0,33,Math.PI/2,M.cOchre,LA,true);container(14.16,0,33,Math.PI/2,M.cBlue,LK,true);crate(14.2,2.59,31.1,.2,1.3,.8,.9,true);
+  crate(.4,0,33.3,.1,1.3,.8,.9);crate(1.9,0,33.1,-.2,.9,.7,.9,true);barrel(4.2,32.3,M.pBlue);barrel(4.9,33,M.pRed);
+  // resto del patio
+  container(-9,0,24.5,.2,M.cBlue,LK,true);container(-17,0,41,Math.PI/2,M.cRed,LH,true);container(-17,2.59,41.2,Math.PI/2+.04,M.cOchre,LA,true);
+  container(7,0,44.5,0,M.cOchre,LA,true);container(13.3,0,45,.05,M.cBlue,LK,true);container(-3,0,43,-.3,M.cTeal,LK,true);
+  container(-25,0,26,0,M.cRed,LH,true);container(-25,2.59,26,.02,M.cBlue,LK,true);container(-25,0,29,0,M.cTeal,LK,true);
+  container(23.5,0,10.5,0,M.cTeal,LK,true);container(24,0,-15,.03,M.cOchre,LA,true);
+  barrier(-14,20,.3);barrier(4,22,Math.PI/2);barrier(18,28,0);barrier(-20,34,Math.PI/2+.1);barrier(16.5,14,Math.PI/2);barrier(-17,-12,.2);
+  barrel(22,44,M.pBlue);barrel(22.7,44.6,M.pRed);barrel(-27,10,M.pBlue);barrel(-27.6,10.8,M.pBlue);barrel(15,-14,M.pRed);
+  crate(-12,0,33,.2,1.3,.8,.9,true);crate(-13.3,0,34,.7,.9,.7,.9);crate(10,0,22,-.2,1.4,.9,1);crate(16,0,-2,.4,1.3,.8,.9,true);crate(22,0,17,.1,.9,.9,.9);crate(-17,0,12,.5,1.3,.8,.9);
+  // caseta de control
+  B(5,2.6,2.6,M.white,-25.5,1.3,45);addCol(-25.5,45,5,2.6,0,2.6);contactShadow(-25.5,45,5,2.6);B(5.3,.1,2.9,M.metalDk,-25.5,2.65,45);
+  B(1.6,.9,.05,glow(1,.82,.55,2.6),-24.6,1.6,43.68,{cast:false,recv:false});B(.9,2,.06,M.pBlue,-26.9,1,43.68,{cast:false});pool(-24.6,42.4,3.5,new T.Color(.16,.12,.07));
+  lamp(-29.3,34,1,false);lamp(-8.5,39,1,false);lamp(29.3,13,-1,false);
   // cielo y ciudad
   skyMat=new T.ShaderMaterial({side:T.BackSide,depthWrite:false,fog:false,uniforms:{uT:timeU,uFl:{value:0}},
     vertexShader:'varying vec3 vD;void main(){vD=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
@@ -391,20 +477,20 @@ void main(){vec3 d=normalize(vD);float y=max(d.y,0.);
   { const wc=mkCanvas(128,256),x=wc.getContext('2d');x.fillStyle='#020203';x.fillRect(0,0,128,256);
     for(let j=0;j<32;j++)for(let i=0;i<10;i++){if(R()<.13){x.fillStyle=R()<.7?'rgba(255,205,135,'+RR(.35,1)+')':'rgba(190,225,255,'+RR(.35,1)+')';x.fillRect(i*12.8+4,j*8+2,5,3)}}
     const wt=new T.CanvasTexture(wc);wt.wrapS=wt.wrapT=T.RepeatWrapping;wt.encoding=T.sRGBEncoding;const bm=new T.MeshBasicMaterial({map:wt,color:new T.Color(.9,.9,.9),fog:false});
-    for(let i=0;i<40;i++){const a=i/40*Math.PI*2+RR(-.06,.06),r=RR(48,105),w=RR(9,20),h=RR(16,58),d=RR(9,18);
-      const m=new T.Mesh(uvBox(new T.BoxGeometry(w,h,d),w,h,d,15,30),bm);m.position.set(Math.cos(a)*r,h/2-2,Math.sin(a)*r);m.rotation.y=-a;world.add(m);
-      if(h>40){const b=new T.Mesh(new T.SphereGeometry(.35,6,6),glow(1,.1,.05,6));b.position.set(Math.cos(a)*r,h-1.4,Math.sin(a)*r);world.add(b)}}}
+    for(let i=0;i<46;i++){const a=i/46*Math.PI*2+RR(-.05,.05),r=Math.cos(a)>.45?RR(180,240):RR(95,150),w=RR(12,26)*(r>160?1.6:1),h=RR(24,74)*(r>160?1.5:1),d=RR(12,22);
+      const m=new T.Mesh(uvBox(new T.BoxGeometry(w,h,d),w,h,d,15,30),bm);m.position.set(Math.cos(a)*r,h/2-2,16+Math.sin(a)*r);m.rotation.y=-a;world.add(m);
+      if(h>52){const b=new T.Mesh(new T.SphereGeometry(.5,6,6),glow(1,.1,.05,6));b.position.set(Math.cos(a)*r,h-1.4,16+Math.sin(a)*r);world.add(b)}}}
 
   // lluvia
   { const Nr=LOW?1300:2800,pos=new Float32Array(Nr*6),ae=new Float32Array(Nr*2),as=new Float32Array(Nr*2);
     for(let i=0;i<Nr;i++){const x=RR(0,24),y=RR(0,14),z=RR(0,24),s=RR(15,22);for(let k=0;k<2;k++){pos[i*6+k*3]=x;pos[i*6+k*3+1]=y;pos[i*6+k*3+2]=z;ae[i*2+k]=k;as[i*2+k]=s}}
     const g=new T.BufferGeometry();g.setAttribute('position',new T.BufferAttribute(pos,3));g.setAttribute('aE',new T.BufferAttribute(ae,1));g.setAttribute('aS',new T.BufferAttribute(as,1));
     rainMat=new T.ShaderMaterial({transparent:true,depthWrite:false,blending:T.AdditiveBlending,fog:false,
-      uniforms:{uT:timeU,uCam:{value:new V3()},uL:{value:[new T.Vector4(0,8.5,-16.6,9),new T.Vector4(),new T.Vector4(),new T.Vector4()]}},
-      vertexShader:`uniform float uT;uniform vec3 uCam;uniform vec4 uL[4];attribute float aE;attribute float aS;varying vec3 vC;
+      uniforms:{uT:timeU,uCam:{value:new V3()},uL:{value:[new T.Vector4(0,8.5,-16.6,9),new T.Vector4(),new T.Vector4(),new T.Vector4(),new T.Vector4(),new T.Vector4(),new T.Vector4()]}},
+      vertexShader:`uniform float uT;uniform vec3 uCam;uniform vec4 uL[7];attribute float aE;attribute float aS;varying vec3 vC;
 void main(){vec3 p=position;p.y=mod(p.y-uT*aS,14.)-.5;p.xz=mod(p.xz-uCam.xz+12.,24.)-12.+uCam.xz;
  p+=vec3(.09,1.,.03)*aE*aS*.012;vec3 c=vec3(.5,.6,.8)*.022;
- for(int i=0;i<4;i++){vec3 d=p-uL[i].xyz;float a=uL[i].w/(1.+dot(d,d)*.09);c+=(i==0?vec3(.7,.82,1.):vec3(1.,.62,.3))*a*.03;}
+ for(int i=0;i<7;i++){vec3 d=p-uL[i].xyz;float a=uL[i].w/(1.+dot(d,d)*.09);c+=(i==0?vec3(.7,.82,1.):vec3(1.,.62,.3))*a*.03;}
  vec4 mv=viewMatrix*vec4(p,1.);vC=c*exp(mv.z*.035);gl_Position=projectionMatrix*mv;}`,
       fragmentShader:'varying vec3 vC;void main(){gl_FragColor=vec4(vC,1.);}'});
     rain=new T.LineSegments(g,rainMat);rain.frustumCulled=false;scene.add(rain);
@@ -413,19 +499,21 @@ void main(){vec3 p=position;p.y=mod(p.y-uT*aS,14.)-.5;p.xz=mod(p.xz-uCam.xz+12.,
 }
 
 /* ================= colisiones ================= */
-function collide(p,r,feet,head){for(let i=0;i<cols.length;i++){const c=cols[i];if(feet>=c.y1-.02||head<=c.y0)continue;
+let ceilY=1e9;
+function collide(p,r,feet,head){ceilY=1e9;for(let i=0;i<cols.length;i++){const c=cols[i];if(feet>=c.y1-.36||head<=c.y0)continue;
   const dx=p.x-c.x,dz=p.z-c.z;let lx=dx*c.c-dz*c.s,lz=dx*c.s+dz*c.c;
   const qx=clamp(lx,-c.hx,c.hx),qz=clamp(lz,-c.hz,c.hz),ex=lx-qx,ez=lz-qz,d2=ex*ex+ez*ez;
   if(d2>=r*r)continue;
+  if(c.y0>feet+.9){if(c.y0<ceilY)ceilY=c.y0;continue}
   if(d2>1e-8){const d=Math.sqrt(d2),k=(r-d)/d;lx+=ex*k;lz+=ez*k}
   else{const px=c.hx-Math.abs(lx)+r,pz=c.hz-Math.abs(lz)+r;if(px<pz)lx+=lx<0?-px:px;else lz+=lz<0?-pz:pz}
   p.x=c.x+lx*c.c+lz*c.s;p.z=c.z-lx*c.s+lz*c.c}}
-function groundAt(x,z,feet){let g=0;for(let i=0;i<cols.length;i++){const c=cols[i];if(c.y1>feet+.4||c.y1<=g)continue;
+function groundAt(x,z,feet){let g=0;for(let i=0;i<cols.length;i++){const c=cols[i];if(c.soft||c.y1>feet+.4||c.y1<=g)continue;
   const dx=x-c.x,dz=z-c.z,lx=dx*c.c-dz*c.s,lz=dx*c.s+dz*c.c;if(Math.abs(lx)<c.hx+.12&&Math.abs(lz)<c.hz+.12)g=c.y1}return g}
 const HIT={t:0,nx:0,ny:0,nz:0,hit:false};
 function rayCols(ox,oy,oz,dx,dy,dz,maxT){let best=maxT,nx=0,ny=0,nz=0,hit=false;
   if(dy<-1e-6){const t=-oy/dy;if(t>0&&t<best){best=t;ny=1;hit=true}}
-  for(let i=0;i<cols.length;i++){const c=cols[i],rx=ox-c.x,rz=oz-c.z,lx=rx*c.c-rz*c.s,lz=rx*c.s+rz*c.c,ldx=dx*c.c-dz*c.s,ldz=dx*c.s+dz*c.c;
+  for(let i=0;i<cols.length;i++){const c=cols[i];if(c.soft)continue;const rx=ox-c.x,rz=oz-c.z,lx=rx*c.c-rz*c.s,lz=rx*c.s+rz*c.c,ldx=dx*c.c-dz*c.s,ldz=dx*c.s+dz*c.c;
     let t0=0,t1=best,ax=-1,sg=0,a,b,s,q;
     if(Math.abs(ldx)<1e-9){if(lx<-c.hx||lx>c.hx)continue}else{a=(-c.hx-lx)/ldx;b=(c.hx-lx)/ldx;s=-1;if(a>b){q=a;a=b;b=q;s=1}if(a>t0){t0=a;ax=0;sg=s}if(b<t1)t1=b;if(t0>t1)continue}
     if(Math.abs(dy)<1e-9){if(oy<c.y0||oy>c.y1)continue}else{a=(c.y0-oy)/dy;b=(c.y1-oy)/dy;s=-1;if(a>b){q=a;a=b;b=q;s=1}if(a>t0){t0=a;ax=1;sg=s}if(b<t1)t1=b;if(t0>t1)continue}
@@ -433,7 +521,7 @@ function rayCols(ox,oy,oz,dx,dy,dz,maxT){let best=maxT,nx=0,ny=0,nz=0,hit=false;
     if(ax<0)continue;best=t0;hit=true;
     if(ax===1){nx=0;ny=sg;nz=0}else if(ax===0){nx=sg*c.c;ny=0;nz=-sg*c.s}else{nx=sg*c.s;ny=0;nz=sg*c.c}}
   HIT.t=best;HIT.nx=nx;HIT.ny=ny;HIT.nz=nz;HIT.hit=hit;return HIT}
-function inSolid(x,y,z){if(y<0)return true;for(let i=0;i<cols.length;i++){const c=cols[i];if(y<c.y0||y>c.y1)continue;const dx=x-c.x,dz=z-c.z,lx=dx*c.c-dz*c.s,lz=dx*c.s+dz*c.c;if(Math.abs(lx)<c.hx&&Math.abs(lz)<c.hz)return true}return false}
+function inSolid(x,y,z){if(y<0)return true;for(let i=0;i<cols.length;i++){const c=cols[i];if(c.soft||y<c.y0||y>c.y1)continue;const dx=x-c.x,dz=z-c.z,lx=dx*c.c-dz*c.s,lz=dx*c.s+dz*c.c;if(Math.abs(lx)<c.hx&&Math.abs(lz)<c.hz)return true}return false}
 
 /* ================= arma en primera persona ================= */
 const wScene=new T.Scene(),wCam=new T.PerspectiveCamera(50,1,.01,6);
@@ -559,7 +647,7 @@ const snd=(function(){let ctx=null,out,noise,hum,humG;
     hum(n){if(ok())humG.gain.setTargetAtTime(Math.min(.07,n*.018),ctx.currentTime,.4)}}})();
 
 /* ================= jugador, arma, entrada ================= */
-const P={pos:new V3(-1.4,0,15.4),vel:new V3(),yaw:.06,pitch:0,ground:true,hp:100,lastHit:-99,bob:0,pp:0,py:0,stepD:0};
+const P={pos:new V3(-1.4,0,27.5),vel:new V3(),yaw:.06,pitch:0,ground:true,hp:100,lastHit:-99,bob:0,pp:0,py:0,stepD:0};
 const W={ammo:30,next:0,reloading:false,rs:0,stage:0,spread:0,kick:0,kickR:0,ads:0,spr:0,sx:0,sy:0,flash:0,shots:0,hits:0,kills:0};
 const RELOAD=1.7;
 const keys={};let fireHeld=false,adsHeld=false,jumpQ=false,lookDX=0,lookDY=0,noPL=false,everLocked=false;
@@ -596,7 +684,9 @@ function updatePlayer(dt){
   P.vel.x+=(wx-P.vel.x)*acc;P.vel.z+=(wz-P.vel.z)*acc;P.vel.y-=17*dt;
   if(jumpQ&&P.ground){P.vel.y=5.6;P.ground=false;snd.step()}jumpQ=false;
   P.pos.addScaledVector(P.vel,dt);collide(P.pos,.38,P.pos.y,P.pos.y+1.75);
+  if(ceilY<1e9&&P.vel.y>0){P.pos.y=Math.min(P.pos.y,ceilY-1.76);P.vel.y=0}
   const g=groundAt(P.pos.x,P.pos.z,P.pos.y);
+  if(P.ground&&P.vel.y<=0&&P.pos.y>g&&P.pos.y-g<.45)P.pos.y=g;
   if(P.pos.y<=g){if(!P.ground&&P.vel.y<-4){snd.step();P.pp-=.03}P.pos.y=g;P.vel.y=0;P.ground=true}else if(P.pos.y>g+.05)P.ground=false;
   const hs=Math.hypot(P.vel.x,P.vel.z);if(P.ground){P.bob+=hs*dt*1.9;P.stepD+=hs*dt;if(P.stepD>(sprint?2.6:2.1)){P.stepD=0;snd.step()}}
   W.spr=lerp(W.spr,sprint?1:0,Math.min(1,dt*9));W.ads=lerp(W.ads,ads?1:0,Math.min(1,dt*13));
@@ -610,8 +700,8 @@ function updatePlayer(dt){
 }
 function placeCamera(dt){
   const hs=Math.hypot(P.vel.x,P.vel.z),bk=P.ground?Math.min(1,hs/4.4):0;
-  shake*=Math.exp(-dt*5);
-  camera.position.set(P.pos.x+RR(-1,1)*shake*.05,P.pos.y+1.66+Math.sin(P.bob*2)*.028*bk+RR(-1,1)*shake*.05,P.pos.z);
+  shake*=Math.exp(-dt*5);if(P.cy===undefined||Math.abs(P.cy-P.pos.y)>1.2)P.cy=P.pos.y;P.cy+=(P.pos.y-P.cy)*Math.min(1,dt*16);
+  camera.position.set(P.pos.x+RR(-1,1)*shake*.05,P.cy+1.66+Math.sin(P.bob*2)*.028*bk+RR(-1,1)*shake*.05,P.pos.z);
   camera.rotation.set(P.pitch+P.pp+RR(-1,1)*shake*.012,P.yaw+P.py,Math.sin(P.bob)*.006*bk+RR(-1,1)*shake*.01);
   const fv=lerp(baseFov,baseFov*.7,W.ads)+W.spr*4;if(Math.abs(camera.fov-fv)>.01){camera.fov=fv;camera.updateProjectionMatrix()}
   camera.updateMatrixWorld();
@@ -682,11 +772,11 @@ function buildDrones(){
     const lt=new T.Sprite(lightM);lt.position.set(-.103,.385,.63);upper.add(lt);const fl=new T.Sprite(flashM);fl.position.set(-.14,.39,.93);fl.visible=false;upper.add(fl);
     g.visible=false;scene.add(g);
     drones.push({g,pos:g.position,hips,upper,thL:l[0],shL:l[1],thR:r[0],shR:r[1],lt,fl,vel:new V3(),tgt:new V3(),vy:0,hp:0,alive:false,st:'off',stT:0,fireT:0,burst:0,burstT:0,hitT:0,ph:R()*6,ck:0,hipY:.94,crouch:false,land:0,noLos:0,losT:0,los:false,chkT:0,lx:0,lz:0,dt:0,fall:0,flT:0,gy:0})}}
-const SPAWNS=[[-13,-5],[-13,-3.5],[-13,2],[-13,9.5],[-13,15],[13,-12],[13,-10],[13,0],[13,2.5],[13,12],[13,14.5],[-6,17.05],[2,17.05],[8,17.05]];
+const SPAWNS=[[-29.3,-9,5.15],[-29.3,2,5.15],[-29.3,14,5.15],[-29.3,22,5.15],[-29.3,38.5,5.15],[-29.3,48.6,5.15],[-22,-17,10.3],[-14,-17,10.3],[16,-17,10.3],[24,-17,10.3],[-3,49.3,0],[0,49.3,0],[3,49.3,0],[20,49.3,0],[-14,49.3,0]];
 function spawnDrone(){let d=drones.find(d=>d.st==='off');if(!d){for(const e of drones)if(e.st==='dead'&&(!d||e.dt>d.dt))d=e}if(!d)return false;
-  const far=SPAWNS.filter(s=>Math.hypot(s[0]-P.pos.x,s[1]-P.pos.z)>9),s=(far.length?far:SPAWNS)[(R()*(far.length||SPAWNS.length))|0];
-  d.pos.set(s[0],5.15,s[1]);d.vel.set(0,0,0);d.vy=1.5;d.hp=100;d.alive=true;d.st='drop';d.fireT=time+RR(1.2,2.2);d.burst=0;d.ck=.3;d.hitT=0;d.flT=0;d.land=0;
-  d.g.rotation.set(0,Math.atan2(-s[0],-s[1]),0);d.upper.rotation.set(.3,0,0);d.lt.visible=true;d.g.visible=true;return true}
+  const dsp=s=>Math.hypot(s[0]-P.pos.x,s[1]-P.pos.z);let far=SPAWNS.filter(s=>dsp(s)>13&&dsp(s)<46);if(!far.length)far=SPAWNS.filter(s=>dsp(s)>9);const s=(far.length?far:SPAWNS)[(R()*(far.length||SPAWNS.length))|0];
+  d.pos.set(s[0],s[2],s[1]);d.vel.set(0,0,0);d.vy=1.5;d.hp=100;d.alive=true;d.st='drop';d.fireT=time+RR(1.2,2.2);d.burst=0;d.ck=.3;d.hitT=0;d.flT=0;d.land=0;
+  d.g.rotation.set(0,Math.atan2(P.pos.x-s[0],P.pos.z-s[1]),0);d.upper.rotation.set(.3,0,0);d.lt.visible=true;d.g.visible=true;return true}
 function damageDrone(d,dmg){d.hp-=dmg;d.hitT=.15;d.burst=0;d.fireT=Math.max(d.fireT,time+.4);
   if(d.hp<=0){d.alive=false;d.st='dead';d.dt=0;d.fall=(R()*4)|0;d.gy=d.pos.y;d.lt.visible=false;d.fl.visible=false;W.kills++;hud.hit(true);snd.tick(true);snd.fall(1/(1+d.pos.distanceTo(P.pos)*.06));hud.obj()}
   else{hud.hit(false);snd.tick(false)}}
@@ -696,13 +786,13 @@ function fireBolt(d){const b=FX.bolts.find(b=>!b.on);if(!b)return;const p=d.pos,
   const dist=_a.distanceTo(P.pos),t=dist/BOLT_V;_b.set(P.pos.x+P.vel.x*t*.5,P.pos.y+1.15,P.pos.z+P.vel.z*t*.5).sub(_a).normalize();
   _b.x+=RR(-.05,.05);_b.y+=RR(-.035,.035);_b.z+=RR(-.05,.05);_b.normalize();b.g.position.copy(_a);b.v.copy(_b).multiplyScalar(BOLT_V);_c.copy(_a).add(_b);b.g.lookAt(_c);b.life=1.6;b.on=true;b.g.visible=true;
   d.flT=.05;const fs=RR(.35,.55);d.fl.scale.set(fs,fs,1);snd.eshot(1/(1+dist*.06))}
-function pickDest(d){const p=d.pos;
-  for(let i=0;i<12;i++){const a=R()*6.283,r=RR(6,15),x=clamp(P.pos.x+Math.cos(a)*r,-12.3,12.3),z=clamp(P.pos.z+Math.sin(a)*r,-16.2,16.3);
+function pickDest(d){const p=d.pos;let cx=P.pos.x,cz=P.pos.z,r0=6,r1=15;const ex=cx-p.x,ez=cz-p.z,el=Math.hypot(ex,ez);if(el>24){cx=p.x+ex/el*13;cz=p.z+ez/el*13;r0=0;r1=7}
+  for(let i=0;i<12;i++){const a=R()*6.283,r=RR(r0,r1),x=clamp(cx+Math.cos(a)*r,-28.4,28.2),z=clamp(cz+Math.sin(a)*r,-16.2,48.6);
     if(inSolid(x,.5,z)||inSolid(x+.5,.5,z)||inSolid(x-.5,.5,z)||inSolid(x,.5,z+.5)||inSolid(x,.5,z-.5))continue;
     const dx=x-p.x,dz=z-p.z,l=Math.hypot(dx,dz);if(l<2)continue;
     if(i<9&&rayCols(p.x,.5,p.z,dx/l,0,dz/l,l).hit)continue;
     d.tgt.set(x,0,z);return}
-  d.tgt.set(clamp(p.x+RR(-4,4),-12,12),0,clamp(p.z+RR(-4,4),-16,16))}
+  d.tgt.set(clamp(p.x+RR(-4,4),-28,28),0,clamp(p.z+RR(-4,4),-16,48))}
 function updateDrones(dt){let alive=0;const px=P.pos.x,pz=P.pos.z;
   for(const d of drones){if(d.st==='off')continue;const p=d.pos;
     if(d.st==='dead'){d.dt+=dt;const k=Math.min(1,d.dt/.6),e=k*k;d.g.rotation.x=d.fall===0?-1.5*e:d.fall===1?1.47*e:0;d.g.rotation.z=d.fall===2?1.5*e:d.fall===3?-1.5*e:0;
@@ -752,7 +842,7 @@ let dmgFlash=0;
 /* ================= oleadas y HUD ================= */
 const WAVES=[3,4,6];let wave=0,toSpawn=0,spawnT=0,betweenT=0,aliveN=0,t0=0,msgT=0;
 function banner(a,b,dur){const m=$('msg');m.innerHTML=a+(b?'<small>'+b+'</small>':'');m.classList.add('on');msgT=time+(dur||2.6)}
-function startWave(i){wave=i;toSpawn=WAVES[i];spawnT=time+2.2;betweenT=0;banner('Oleada '+(i+1)+' de 3',WAVES[i]+' hostiles saltando el muro');hud.obj()}
+function startWave(i){wave=i;toSpawn=WAVES[i];spawnT=time+2.2;betweenT=0;banner('Oleada '+(i+1)+' de 3',WAVES[i]+' hostiles entrando al muelle');hud.obj()}
 function updateWaves(){
   if(toSpawn>0&&time>spawnT){if(spawnDrone()){toSpawn--;spawnT=time+1.1;hud.obj()}}
   if(toSpawn===0&&aliveN===0&&!betweenT){if(wave===2){betweenT=time+1.6;banner('Patio despejado','',3)}else{betweenT=time+4.5;banner('Oleada superada','Recarga y busca cobertura',3)}}
@@ -764,7 +854,7 @@ const hud={
   obj(){$('oS').textContent='Oleada '+(wave+1)+'/3 · hostiles: '+(drones.filter(d=>d.alive).length+toSpawn)},
   hit(k){const h=$('hit');h.className=k?'kill':'';h.style.transition='none';h.style.opacity=1;h.style.transform='rotate(45deg) scale('+(k?1.5:1)+')';requestAnimationFrame(()=>{h.style.transition='opacity .35s';h.style.opacity=0})},
   xh(){$('xh').style.setProperty('--g',(5+(W.spread+(1-W.ads)*.004)*900+Math.hypot(P.vel.x,P.vel.z)*1.2)+'px')}};
-function resetGame(){P.pos.set(-1.4,0,15.4);P.vel.set(0,0,0);P.yaw=.06;P.pitch=0;P.hp=100;P.lastHit=-99;P.pp=P.py=0;
+function resetGame(){P.pos.set(-1.4,0,27.5);P.vel.set(0,0,0);P.yaw=.06;P.pitch=0;P.hp=100;P.lastHit=-99;P.pp=P.py=0;
   W.ammo=30;W.reloading=false;W.shots=W.hits=W.kills=0;W.spread=0;$('rl').style.opacity=0;
   for(const d of drones){d.alive=false;d.st='off';d.g.visible=false}for(const b of FX.bolts){b.on=false;b.g.visible=false}
   t0=time;drawAmmo();hud.hp();hud.ammo();startWave(0)}
