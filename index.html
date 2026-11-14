@@ -60,6 +60,7 @@ body.touch.play #touch{display:block}
 #bJ{width:58px;height:58px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 104px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 70px)}
 #bR{width:58px;height:58px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 70px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 160px)}
 #bP{width:42px;height:42px;right:max(16px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px))}
+#bS{width:42px;height:42px;right:calc(max(16px,env(safe-area-inset-right,0px)) + 54px);top:max(12px,env(safe-area-inset-top,0px));font-size:19px}
 /* portada / pausa */
 #ov{position:fixed;inset:0;display:flex;flex-direction:column;justify-content:flex-end;align-items:flex-start;
   padding:max(28px,env(safe-area-inset-top,0px)) max(28px,env(safe-area-inset-right,0px)) max(36px,env(safe-area-inset-bottom,0px)) max(28px,env(safe-area-inset-left,0px));
@@ -69,11 +70,14 @@ body.play #ov{opacity:0;pointer-events:none}
 #ov h1 span{display:block;font-size:.3em;font-weight:400;letter-spacing:.02em;color:var(--sodium);margin-bottom:.35em}
 #ov p{margin:16px 0 0;max-width:46ch;font-size:18px;line-height:1.35;color:rgba(219,238,255,.82)}
 #ov p.k{font-size:16px;color:rgba(219,238,255,.6)}
-#go{margin-top:22px;pointer-events:auto;cursor:pointer;border:0;padding:13px 30px 12px;font:800 22px 'Saira Condensed','Arial Narrow',sans-serif;letter-spacing:.03em;
+#acts{display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px;margin-top:22px}
+#fs{pointer-events:auto;cursor:pointer;background:none;border:1.5px solid rgba(219,238,255,.45);color:var(--ice);padding:11px 20px 10px;font:600 18px 'Saira Condensed','Arial Narrow',sans-serif;transform:skewX(-10deg)}
+#fs:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
+#go{pointer-events:auto;cursor:pointer;border:0;padding:13px 30px 12px;font:800 22px 'Saira Condensed','Arial Narrow',sans-serif;letter-spacing:.03em;
   color:#0b0d10;background:var(--sodium);transform:skewX(-10deg)}
 #go:disabled{background:rgba(219,238,255,.25);color:rgba(219,238,255,.7);cursor:default}
 #go:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
-@media (max-height:480px){#ov h1{font-size:64px}#ov p{font-size:15px;margin-top:8px}#go{margin-top:12px}}
+@media (max-height:480px){#ov h1{font-size:64px}#ov p{font-size:15px;margin-top:8px}#acts{margin-top:12px}}
 </style>
 </head>
 <body>
@@ -96,13 +100,14 @@ body.play #ov{opacity:0;pointer-events:none}
   <div class="tb" id="bJ">Salto</div>
   <div class="tb" id="bR">Recarga</div>
   <div class="tb" id="bP">II</div>
+  <div class="tb" id="bS" aria-label="Pantalla completa">⛶</div>
 </div>
 
 <div id="ov">
   <h1 id="ovT"><span>Zona portuaria, 03:14, lluvia</span>Muelle 03</h1>
   <p id="ovP">Un equipo de asalto ha tomado el depósito y viene a por ti. Aguanta tres oleadas en el patio de carga.</p>
   <p id="ovK" class="k"></p>
-  <button id="go" disabled>Preparando el patio…</button>
+  <div id="acts"><button id="go" disabled>Preparando el patio…</button><button id="fs" hidden>Pantalla completa</button></div>
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -764,7 +769,7 @@ function resetGame(){P.pos.set(-1.4,0,15.4);P.vel.set(0,0,0);P.yaw=.06;P.pitch=0
   for(const d of drones){d.alive=false;d.st='off';d.g.visible=false}for(const b of FX.bolts){b.on=false;b.g.visible=false}
   t0=time;drawAmmo();hud.hp();hud.ammo();startWave(0)}
 function overlay(kind,extra){const tt=$('ovT'),p=$('ovP'),k=$('ovK'),go=$('go');go.disabled=false;
-  const ctl=isTouch?'Pulgar izquierdo para moverte, derecho para mirar. Mejor en horizontal.':'WASD para moverte, ratón para apuntar, clic para disparar, clic derecho para la mira, R recarga, Espacio salta, Mayús corre.';
+  const ctl=isTouch?'Pulgar izquierdo para moverte, derecho para mirar. Mejor en horizontal.':'WASD para moverte, ratón para apuntar, clic para disparar, clic derecho para la mira, R recarga, Espacio salta, Mayús corre, F pantalla completa.';
   if(kind==='menu'){k.textContent=ctl;go.textContent='Entrar al patio'}
   else if(kind==='pause'){tt.innerHTML='<span>Muelle 03</span>En pausa';p.textContent='El equipo de asalto espera. La lluvia no.';k.textContent=ctl;go.textContent='Seguir'}
   else if(kind==='dead'){tt.innerHTML='<span>Oleada '+(wave+1)+' de 3</span>Derribado';p.textContent=extra;k.textContent='';go.textContent='Volver a intentarlo'}
@@ -782,7 +787,13 @@ $('go').addEventListener('click',()=>{if(state==='load')return;snd.init();
 document.addEventListener('pointerlockchange',()=>{if(document.pointerLockElement===canvas){everLocked=true;if(state!=='play')setPlay()}else if(!noPL)pause()});
 document.addEventListener('pointerlockerror',()=>{if(!everLocked)noPL=true});
 document.addEventListener('visibilitychange',()=>{if(document.hidden){pause();if(document.pointerLockElement)document.exitPointerLock()}});
-addEventListener('keydown',e=>{if(e.repeat)return;keys[e.code]=true;if(e.code==='Space'){jumpQ=true;e.preventDefault()}
+/* pantalla completa */
+const fsRoot=document.documentElement,fsOK=!!(fsRoot.requestFullscreen||fsRoot.webkitRequestFullscreen)&&(document.fullscreenEnabled!==false);
+const fsOn=()=>!!(document.fullscreenElement||document.webkitFullscreenElement);
+function toggleFs(){if(!fsOK)return;try{if(fsOn()){(document.exitFullscreen||document.webkitExitFullscreen).call(document)}else{const pr=(fsRoot.requestFullscreen||fsRoot.webkitRequestFullscreen).call(fsRoot,{navigationUI:'hide'});if(pr&&pr.catch)pr.catch(()=>{})}}catch(e){}}
+function fsSync(){$('fs').textContent=fsOn()?'Salir de pantalla completa':'Pantalla completa';$('bS').classList.toggle('on',fsOn())}
+if(fsOK){$('fs').hidden=false;$('fs').addEventListener('click',toggleFs);document.addEventListener('fullscreenchange',fsSync);document.addEventListener('webkitfullscreenchange',fsSync)}else $('bS').style.display='none';
+addEventListener('keydown',e=>{if(e.repeat)return;keys[e.code]=true;if(e.code==='KeyF')toggleFs();if(e.code==='Space'){jumpQ=true;e.preventDefault()}
   if((e.code==='Escape'||e.code==='KeyP')&&noPL&&state==='play')pause();if(e.code==='Tab')e.preventDefault()});
 addEventListener('keyup',e=>{keys[e.code]=false});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false;fireHeld=adsHeld=false});
@@ -793,14 +804,14 @@ addEventListener('mousemove',e=>{if(state!=='play')return;if(document.pointerLoc
 // táctil
 (function(){const tz=$('touch'),jb=$('joy'),js=jb.firstElementChild,bF=$('bF');let fireId=null;
   tz.addEventListener('touchstart',e=>{e.preventDefault();for(const t of e.changedTouches){const el=t.target;
-    if(el.id==='bJ'){jumpQ=true;continue}if(el.id==='bR'){startReload();continue}if(el.id==='bP'){pause();continue}
+    if(el.id==='bJ'){jumpQ=true;continue}if(el.id==='bR'){startReload();continue}if(el.id==='bP'){pause();continue}if(el.id==='bS')continue;
     if(el.id==='bF'){fireId=t.identifier;fireHeld=true;bF.classList.add('on');if(look.id===null){look.id=t.identifier;look.x=t.clientX;look.y=t.clientY}continue}
     if(t.clientX<innerWidth*.42&&joy.id===null){joy.id=t.identifier;joy.ox=t.clientX;joy.oy=t.clientY;jb.style.display='block';jb.style.left=t.clientX+'px';jb.style.top=t.clientY+'px';js.style.transform=''}
     else if(look.id===null){look.id=t.identifier;look.x=t.clientX;look.y=t.clientY}}},{passive:false});
   tz.addEventListener('touchmove',e=>{e.preventDefault();for(const t of e.changedTouches){
     if(t.identifier===joy.id){let dx=(t.clientX-joy.ox)/52,dy=(t.clientY-joy.oy)/52;const l=Math.hypot(dx,dy);if(l>1){dx/=l;dy/=l}joy.x=dx;joy.y=dy;js.style.transform='translate('+dx*38+'px,'+dy*38+'px)'}
     else if(t.identifier===look.id){lookDX+=(t.clientX-look.x)*.0052;lookDY+=(t.clientY-look.y)*.0044;look.x=t.clientX;look.y=t.clientY}}},{passive:false});
-  const end=e=>{e.preventDefault();for(const t of e.changedTouches){if(t.identifier===joy.id){joy.id=null;joy.x=joy.y=0;jb.style.display='none'}if(t.identifier===look.id)look.id=null;if(t.identifier===fireId){fireId=null;fireHeld=false;bF.classList.remove('on')}}};
+  const end=e=>{e.preventDefault();for(const t of e.changedTouches){if(t.target.id==='bS'&&e.type==='touchend')toggleFs();if(t.identifier===joy.id){joy.id=null;joy.x=joy.y=0;jb.style.display='none'}if(t.identifier===look.id)look.id=null;if(t.identifier===fireId){fireId=null;fireHeld=false;bF.classList.remove('on')}}};
   tz.addEventListener('touchend',end,{passive:false});tz.addEventListener('touchcancel',end,{passive:false})})();
 
 /* ================= posprocesado ================= */
