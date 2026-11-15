@@ -487,6 +487,8 @@ function zoneMuelle(){
   B(5,2.6,2.6,M.white,-25.5,1.3,45);addCol(-25.5,45,5,2.6,0,2.6);contactShadow(-25.5,45,5,2.6);B(5.3,.1,2.9,M.metalDk,-25.5,2.65,45);
   B(1.6,.9,.05,glow(1,.82,.55,2.6),-24.6,1.6,43.68,{cast:false,recv:false});B(.9,2,.06,M.pBlue,-26.9,1,43.68,{cast:false});pool(-24.6,42.4,3.5,new T.Color(.16,.12,.07));
   lamp(-29.3,34,1,false);lamp(-8.5,39,1,false);lamp(29.3,13,-1,false);
+  // vehículos estacionados: en el nivel 1, los dos camiones sin acoplado y un autoelevador; después alternan de lugar
+  { const sw=level>1&&(level>>1)%2===1,mid=sw?['tractor_rojo','tractor_azul']:['tractor_azul','tractor_rojo'];veh(mid[0],23.5,30,Math.PI/2);veh(mid[1],-22.5,17.5,.2);veh('autoelevador',9,17.5,-.5)}
   return{name:'Patio de contenedores',b:[-28.4,28.2,-16.2,48.6],start:[-1.4,27.5,.06],env:[-.5,1.9,2],steam:[3.2,-14.2],
     spawns:[[-29.3,-9,5.15],[-29.3,2,5.15],[-29.3,14,5.15],[-29.3,22,5.15],[-29.3,38.5,5.15],[-29.3,48.6,5.15],[-22,-17,10.3],[-14,-17,10.3],[16,-17,10.3],[24,-17,10.3],[-3,49.3,0],[0,49.3,0],[3,49.3,0],[20,49.3,0],[-14,49.3,0]]}}
 function buildSky(){
@@ -586,6 +588,18 @@ function forklift(x,z,rot){const g=new T.Group();g.position.set(x,0,z);g.rotatio
   B(.08,.08,.04,glow(1,.6,.1,5),0,2.44,-.9,{parent:g,cast:false,recv:false});
   addCol(x+.25*s,z+.25*c,1.3,3.2,0,2.4,rot);contactShadow(x,z,1.3,2.8,rot)}
 
+/* ---------- modelos de vehículos (GLB); colisiones: [centro en x local, largo, ancho, alto], frente hacia -x ---------- */
+const VEH={},VDEF={autoelevador:[[.32,2.65,1.32,2.15]],tractor_azul:[[-1.6,3.8,2.6,3.65],[1.9,3.2,2.5,1.35]],tractor_rojo:[[-1.7,2.2,2.56,3.1],[1.1,3.4,2.5,1.25]],camion_contenedor:[[0,10.4,2.8,3.4]],camion_cisterna:[[0,12.9,2.65,3]],locomotora:[[0,16.4,3.1,4.3]]};
+function veh(name,x,z,rot){const g=VEH[name],D=VDEF[name],c=Math.cos(rot),s=Math.sin(rot);
+  if(!g){if(name==='autoelevador')return forklift(x,z,rot-Math.PI/2);if(name==='locomotora')return wagon('loco',x,z);if(name[0]==='c')return truck(x,z,rot+Math.PI,M.cRed,null);
+    const fg=new T.Group();fg.position.set(x,0,z);fg.rotation.y=rot;world.add(fg);for(const k of D){B(k[1],k[3]-.5,k[2],k[3]>2?M.white:M.metalDk,k[0],(k[3]+.5)/2,0,{parent:fg});addCol(x+k[0]*c,z-k[0]*s,k[1],k[2],0,k[3],rot)}return}
+  let x0=1e9,x1=-1e9,W=0;for(const k of D){addCol(x+k[0]*c,z-k[0]*s,k[1],k[2],0,k[3],rot);x0=Math.min(x0,k[0]-k[1]/2);x1=Math.max(x1,k[0]+k[1]/2);W=Math.max(W,k[2])}
+  const mc=(x0+x1)/2;contactShadow(x+mc*c,z-mc*s,x1-x0,W,rot);
+  const m=new T.Mesh(g.geo,g.mat);m.position.set(x,0,z);m.rotation.y=rot;m.castShadow=m.receiveShadow=true;m.userData.keep=true;world.add(m)}
+function loadVehicles(){if(!T.GLTFLoader)return;const names=Object.keys(VDEF);let left=names.length,got=0;const ld=new T.GLTFLoader();
+  const done=()=>{if(--left===0&&got&&state==='menu'){try{loadZone(level-1)}catch(e){console.warn(e)}}};
+  for(const n of names)ld.load(n+'.glb',g=>{let m=null;g.scene.traverse(o=>{if(o.isMesh&&!m)m=o});if(m){m.material.envMapIntensity=.9;if(m.material.map)m.material.map.anisotropy=Math.min(4,maxAniso);VEH[n]={geo:m.geometry,mat:m.material};got++}done()},undefined,done)}
+
 /* ================= zona 2: playa ferroviaria ================= */
 function zonePlaya(){
   for(const k of['map','normalMap','orm'])TX.floor[k].repeat.set(49.2/5,110/5);
@@ -610,12 +624,12 @@ function zonePlaya(){
     const tt=new T.CanvasTexture(c);tt.wrapS=tt.wrapT=T.RepeatWrapping;tt.encoding=T.sRGBEncoding;tt.anisotropy=Math.min(8,maxAniso);tt.repeat.set(1,110/.66);const tm=new T.MeshStandardMaterial({map:tt,roughness:.95,metalness:0,polygonOffset:true,polygonOffsetFactor:-1});
     for(const tx of[-16,-10,-4]){const m=new T.Mesh(new T.PlaneGeometry(3.1,110),tm);m.rotation.x=-Math.PI/2;m.position.set(tx,.01,0);m.receiveShadow=true;world.add(m);for(const sx of[-.72,.72])B(.09,.16,110,M.metal,tx+sx,.08,0,{cast:false})}}
   // trenes
-  wagon('loco',-16,-15);wagon('box',-16,1.5,M.cRed);wagon('box',-16,16,M.cOchre);
+  veh('locomotora',-16,-15,Math.PI/2);wagon('box',-16,1.5,M.cRed);wagon('box',-16,16,M.cOchre);
   wagon('tank',-10,-17);wagon('flat',-10,-2,M.cBlue,LK);wagon('box',-10,15,M.cTeal);
   wagon('flat',-4,-13);
   for(const w of[[-16,-42],[-10,40],[-4,44],[-16,38]])B(3,2.9,12.6,[M.cRed,M.cBlue,M.cOchre,M.cTeal][(w[0]+w[1]+60)%4],w[0],2.65,w[1],{cast:false});
   // patio de camiones
-  truck(7,-12,.12,M.cRed,LH);forklift(11.5,5.5,.7);forklift(2.2,19,-2.4);
+  { const alt=(level>>1)%2===1;veh(alt?'camion_cisterna':'camion_contenedor',7,-12,Math.PI+.12);veh(alt?'tractor_rojo':'tractor_azul',9.5,12.5,Math.PI/2);veh('autoelevador',11.5,5.5,.7+Math.PI/2);veh('autoelevador',2.2,19,-2.4+Math.PI/2)}
   container(8.5,0,19.5,.06,M.cOchre,LA,true);container(3,0,5,Math.PI/2+.1,M.cBlue,LK,true);
   crate(12.4,0,7.2,.7,1.2,.14,1,false);crate(12.4,.14,7.2,.7,1.1,.8,.9,true);crate(-1,0,-6,.2,1.3,.8,.9);crate(-.8,.8,-6.1,-.1,1,.6,.8);crate(.5,0,-5.2,.9,.9,.7,.9,true);
   crate(13,0,-20,.1,1.3,.8,.9);crate(14.4,0,-19.4,.6,.9,.9,.9,true);crate(-21,0,3,.3,1.3,.8,.9,true);crate(-20.6,0,-20,.2,1.3,.8,.9);
@@ -634,7 +648,7 @@ function zonePlaya(){
     spawns:[[-23.5,-21,5.15],[-23.5,-6,5.15],[-23.5,8,5.15],[-23.5,23,5.15],[17.3,-18,6.3],[17.3,-4,6.3],[17.3,4,6.3],[17.3,18,6.3],[1,27,0],[-20,27,0],[-20,-27,0],[18,26.8,0]]}}
 const ZONES=[zoneMuelle,zonePlaya];
 function loadZone(lv){
-  world.traverse(o=>{if(o.geometry)o.geometry.dispose()});while(world.children.length)world.remove(world.children[0]);
+  world.traverse(o=>{if(o.geometry&&!o.userData.keep)o.geometry.dispose()});while(world.children.length)world.remove(world.children[0]);
   cols.length=0;lamps.length=0;for(const s of lampPool)s.intensity=0;L.canopy.intensity=0;L.water=null;beacon=null;if(gate){scene.remove(gate.g);gate=null}
   if(FX.dec){for(const m of FX.dec)m.visible=false;for(const o of FX.sh){o.life=0;o.m.visible=false}for(const o of FX.deb){o.life=0;o.m.visible=false}}
   Z=ZONES[lv%ZONES.length]();Z.lv=lv+1;
@@ -1065,7 +1079,7 @@ function hurt(dmg,from){if(state!=='play')return;P.hp-=dmg;P.lastHit=time;dmgFla
 let dmgFlash=0;
 
 /* ================= drones cuadrúpedos ================= */
-const quads=[],foes=[];let QBM=null,SBM=null;
+const quads=[],foes=[];let SBM=null;
 const QHS=[[0,1.4,.34,.3,0],[0,1.05,.3,.44,1],[0,1.05,-.3,.44,1],[0,.45,0,.5,3]];
 function hitQuad(d,o,dir,maxT){let best=maxT;const p=d.pos,s=Math.sin(d.g.rotation.y),c=Math.cos(d.g.rotation.y),by=p.y+d.bd.position.y;
   for(let i=0;i<4;i++){const h=QHS[i],r=h[3],ax=p.x+h[2]*s-o.x,ay=by+h[1]-o.y,az=p.z+h[2]*c-o.z,b=ax*dir.x+ay*dir.y+az*dir.z,cc=ax*ax+ay*ay+az*az-b*b;
@@ -1090,8 +1104,8 @@ function buildQuads(){
     b.limb(O,A,.052,.042,ARM);b.limb(new V3(sx*.05,0,0),A.clone().add(new V3(sx*.05,0,0)),.016,.016,STL);b.sph(.06,A.x,A.y,A.z,FRM);b.cyl(.11,.13,.07,A.x+sx*.02,A.y-.1,A.z+sz*.02,PAD);
     c.box(.012,.2,.06,A.x*.5+sx*.075,A.y*.5,A.z*.5,UV);gUp.push(mergeParts(a));gLo.push(mergeParts(b));gSh.push(mergeParts(c));KP.push(K);AP.push([sx,sz])}
   const gc=mkCanvas(64),gx=gc.getContext('2d'),gg=gx.createRadialGradient(32,32,0,32,32,32);gg.addColorStop(0,'rgba(255,255,255,1)');gg.addColorStop(.3,'rgba(255,255,255,.45)');gg.addColorStop(1,'rgba(255,255,255,0)');gx.fillStyle=gg;gx.fillRect(0,0,64,64);
-  const flM=new T.SpriteMaterial({map:new T.CanvasTexture(gc),color:new T.Color(5,2.2,10),transparent:true,blending:T.AdditiveBlending,depthWrite:false,fog:false});
-  const b0=FX.bolts[0].g.children;SBM=[b0[0].material,b0[1].material];QBM=[new T.MeshBasicMaterial({color:new T.Color(4.5,1.6,10),fog:false}),b0[1].material.clone()];QBM[1].color.setRGB(.6,.2,1.3);
+  const flM=new T.SpriteMaterial({map:new T.CanvasTexture(gc),color:new T.Color(10,6,2.4),transparent:true,blending:T.AdditiveBlending,depthWrite:false,fog:false});
+  const b0=FX.bolts[0].g.children;SBM=[b0[0].material,b0[1].material];
   for(let i=0;i<4;i++){const g=new T.Group(),bd=new T.Group();g.add(bd);const mk=(geo,m,par)=>{const o=new T.Mesh(geo,m);o.castShadow=m===mat;o.receiveShadow=m===mat;par.add(o);return o};
     mk(gB,mat,bd);mk(gU,uvM,bd);const eyeM=new T.MeshBasicMaterial({color:new T.Color(3,.3,.15),fog:false}),eye=new T.Mesh(new T.BoxGeometry(.24,.055,.02),eyeM);eye.position.set(0,1.35,.636);bd.add(eye);
     const fl=new T.Sprite(flM);fl.position.set(0,1.52,.56);fl.visible=false;bd.add(fl);
@@ -1108,7 +1122,7 @@ function fireQuadBolt(d){const b=FX.bolts.find(b=>!b.on);if(!b)return;const p=d.
   _a.set(p.x+lx*c+.56*s,p.y+d.bd.position.y+1.52,p.z-lx*s+.56*c);
   const dist=_a.distanceTo(P.pos),t=dist/BOLT_V;_b.set(P.pos.x+P.vel.x*t*.5,P.pos.y+1.15,P.pos.z+P.vel.z*t*.5).sub(_a).normalize();
   _b.x+=RR(-.06,.06);_b.y+=RR(-.04,.04);_b.z+=RR(-.06,.06);_b.normalize();b.g.position.copy(_a);b.v.copy(_b).multiplyScalar(BOLT_V);_c.copy(_a).add(_b);b.g.lookAt(_c);b.life=1.6;b.on=true;b.g.visible=true;
-  b.dmg=5+(level-1)*.35;b.g.children[0].material=QBM[0];b.g.children[1].material=QBM[1];d.flT=.05;const fs=RR(.4,.6);d.fl.scale.set(fs,fs,1);snd.zap(1/(1+dist*.05))}
+  b.dmg=5+(level-1)*.35;b.g.children[0].material=SBM[0];b.g.children[1].material=SBM[1];d.flT=.05;const fs=RR(.4,.6);d.fl.scale.set(fs,fs,1);snd.eshot(1/(1+dist*.06))}
 function updateQuads(dt){let alive=0;const px=P.pos.x,pz=P.pos.z;
   for(const d of quads){if(d.st==='off')continue;const p=d.pos;
     if(d.st==='dead'){d.dt+=dt;const k=Math.min(1,d.dt/.45),e=k*k;d.bd.position.y=-.6*e;d.bd.rotation.z=.16*e;d.bd.rotation.x=-.08*e;for(const l of d.legs){l.hip.rotation.x=0;l.hip.rotation.z=l.sx*.8*e}
@@ -1291,12 +1305,12 @@ function frame(now){requestAnimationFrame(frame);
 
 /* ================= arranque ================= */
 function boot(){
-  try{buildWorld();buildFx();buildGun();buildDrones();buildQuads();loadSoldierModel();buildPost();resize();
+  try{buildWorld();buildFx();buildGun();buildDrones();buildQuads();loadSoldierModel();loadVehicles();buildPost();resize();
     level=QS.has('nivel')?clamp(parseInt(QS.get('nivel'),10)||1,1,LEVELS):savedLevel();loadZone(level-1);P.pos.set(Z.start[0],0,Z.start[1]);P.yaw=Z.start[2];
     camera.position.set(P.pos.x,1.66,P.pos.z);camera.rotation.set(0,P.yaw,0);camera.updateMatrixWorld();
     renderer.compile(scene,camera);renderer.compile(wScene,wCam);
     hud.hp();hud.ammo();state='menu';overlay('menu');clock=performance.now();requestAnimationFrame(frame);
-    window.__game={sw:switchWeapon,keys,die(){hurt(999,P.pos)},lvl:()=>level,phase:()=>phase,gate:()=>gate,quads,spawnQuad,wipe(){for(const d of foes)if(d.alive){d.alive=false;d.st='off';d.g.visible=false}toSpawn=0},sm:()=>!!SM,P,W,drones,state:()=>state,L,start(){resetGame();setPlay()},spawnDrone,renderer}}
+    window.__game={veh:()=>Object.keys(VEH).length,zone:()=>Z,sw:switchWeapon,keys,die(){hurt(999,P.pos)},lvl:()=>level,phase:()=>phase,gate:()=>gate,quads,spawnQuad,wipe(){for(const d of foes)if(d.alive){d.alive=false;d.st='off';d.g.visible=false}toSpawn=0},sm:()=>!!SM,P,W,drones,state:()=>state,L,start(){resetGame();setPlay()},spawnDrone,renderer}}
   catch(e){console.error(e);$('go').textContent='Error al iniciar: '+e.message}}
 requestAnimationFrame(()=>setTimeout(boot,60));
 })();
