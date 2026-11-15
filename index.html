@@ -705,9 +705,9 @@ function silo(x,z,r,h,num){C(r,r,h,M.silo,x,h/2,z,{seg:28});const top=new T.Mesh
   for(const yy of[.25,h*.33,h*.66,h-.15]){const t=new T.Mesh(new T.TorusGeometry(r+.02,.07,6,28),M.metalDk);t.rotation.x=Math.PI/2;t.position.set(x,yy,z);world.add(t)}
   B(.06,h,.5,M.metalDk,x+r+.06,h/2,z+1.2,{cast:false});for(let yy=.4;yy<h;yy+=.4)B(.05,.04,.46,M.metal,x+r+.1,yy,z+1.2,{cast:false});
   const p=new T.Mesh(new T.PlaneGeometry(2.4,2.4),new T.MeshStandardMaterial({map:textTex(256,256,(q,w,hh)=>{q.fillStyle='#1b1d20';q.font='900 210px '+FONT;q.fillText(num,w/2,hh/2+14)},.4),transparent:true,roughness:.6,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));p.rotation.y=Math.PI/2;p.position.set(x+r+.03,7,z-.6);world.add(p);
-  const s=r*1.848;addCol(x,z,s,s,0,h);addCol(x,z,s,s,0,h,Math.PI/4);contactShadow(x,z,r*1.6,r*1.6)}
+  const s=r*1.53;addCol(x,z,s,s,0,h);addCol(x,z,s,s,0,h,Math.PI/4);contactShadow(x,z,r*1.6,r*1.6)}
 function pile(x,z,r,h,mat){const m=new T.Mesh(new T.ConeGeometry(r,h,22,2),mat);m.position.set(x,h/2-.03,z);m.castShadow=m.receiveShadow=true;world.add(m);
-  const n=Math.round(h/.3);for(let k=1;k<=n;k++){const s=r*(1-(k-.4)/n)*1.848*.96;addCol(x,z,s,s,0,k*.3);addCol(x,z,s,s,0,k*.3,Math.PI/4)}}
+  const n=Math.round(h/.3);for(let k=1;k<=n;k++){const s=r*(1-(k-.4)/n)*1.53;addCol(x,z,s,s,0,k*.3);addCol(x,z,s,s,0,k*.3,Math.PI/4)}}
 function zoneGraneles(){
   for(const k of['map','normalMap','orm'])TX.floor[k].repeat.set(54/5,114/5);
   const fl=new T.Mesh(new T.PlaneGeometry(54,114),M.floor);fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;world.add(fl);
