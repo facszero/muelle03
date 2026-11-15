@@ -733,7 +733,7 @@ function zoneGraneles(){
     for(const t of[.3,.6]){const tx=1.6+dx*t,ty=1.6+dy*t-.3;for(const sz of[-1,1]){C(.12,.12,ty,M.metal,tx,ty/2,-6+sz*1.1,{seg:8});addCol(tx,-6+sz*1.1,.26,.26,0,ty)}B(.12,.12,2.3,M.metal,tx,ty*.55,-6,{cast:false})}}
   L.canopy.position.set(2.2,2.5,-6);L.canopy.intensity=55;gPool(2.2,-6,4,new T.Color(.07,.085,.1));for(const sx of[-1.2,1.2])B(.5,.06,.14,glow(.8,.92,1,7),2.2+sx,3.28,-6,{cast:false,recv:false});
   // boxes de acopio con pilas (se puede subir a ellas) y cinta apiladora
-  for(const z2 of[-18,-6,6,18]){B(12.4,2.4,.5,M.conc,19.6,1.2,z2);addCol(19.6,z2,12.4,.5,0,2.4);C(.12,.12,4.9,M.metal,17,4.85,z2,{seg:8,cast:false})}
+  for(const z2 of[-18,-6,6,18]){B(12.9,2.4,.5,M.conc,19.85,1.2,z2);addCol(19.85,z2,12.9,.5,0,2.4);C(.12,.12,4.9,M.metal,17,4.85,z2,{seg:8,cast:false})}
   pile(20,-12,5,3.3,M.pileA);pile(20,0,5,3,M.pileB);pile(20,12,5,3.3,M.pileC);
   B(1.3,.45,37,M.metalDk,17,7.5,0,{cast:false});for(const sx of[-1,1])B(.06,.9,37,M.metal,17+sx*.68,7.9,0,{cast:false});for(const z2 of[-12,0,12])B(.7,1.6,.7,M.metalDk,17.6,6.6,z2,{rz:-.5,cast:false});
   // oficina, vehículos y carga suelta
