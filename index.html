@@ -754,7 +754,81 @@ function zoneGraneles(){
   C(.05,.05,1.1,M.metal,4,6.55,-4.2);const bl=glow(1,.08,.05,3);C(.13,.13,.2,bl,4,7.2,-4.2,{cast:false});L.beacon.position.set(4,7.2,-4.2);beacon={lm:bl,x:4,z:-4.2};
   return{name:'Terminal de graneles',b:[-25.2,25.2,-27.2,27.2],start:[2,-25.6,Math.PI],env:[0,1.9,4],steam:[2.2,-6],
     spawns:[[-25.3,-12,5.15],[-25.3,0,5.15],[-25.3,12,5.15],[25.3,-12,6.15],[25.3,0,6.15],[25.3,12,6.15],[21,-27,0],[21,26.5,0],[-9,27,0],[11,27,0],[-21,-27,0]]}}
-const ZONES=[zoneMuelle,zonePlaya,zoneCamiones,zoneGraneles];
+/* ================= zona 5: dique seco ================= */
+function shipHull(){const Lh=34,z0=-18,HB=5,DK=9,N=26,PR=[[.08,1.3],[.55,1.7],[.85,2.8],[.97,4.3],[.99,4.95],[.99,5.05],[1,6.5],[1.03,DK]];
+  const bw=t=>HB*Math.min(1,.72+t*2.5)*(t>.62?Math.sqrt(Math.max(0,1-Math.pow((t-.62)/.38,2))):1),kl=t=>1.3+(t<.12?Math.pow(1-t/.12,2)*3:0)+(t>.8?Math.pow((t-.8)/.2,2)*5:0);
+  const st=[[0,0]];for(let i=0;i<=N;i++)st.push([i/N,bw(i/N)]);
+  const pos=[],col=[],idx=[],np=PR.length;
+  for(const sg of[-1,1])for(const s of st){const yk=kl(s[0]);for(let j=0;j<np;j++){const y=yk+(PR[j][1]-1.3)*(DK-yk)/(DK-1.3);pos.push(sg*s[1]*PR[j][0],y,z0+Lh*s[0]);if(j<5)col.push(.3,.045,.035);else col.push(.085,.1,.12)}}
+  for(let h=0;h<2;h++){const o=h*st.length*np;for(let i=0;i<st.length-1;i++)for(let j=0;j<np-1;j++){const a=o+i*np+j,b=a+np;idx.push(a,b,a+1,b,b+1,a+1)}}
+  for(let i=0;i<st.length-1;i++){const a=i*np,b=a+np,c=st.length*np+i*np,d=c+np;idx.push(a,b,c,b,d,c)}
+  const g=new T.BufferGeometry();g.setAttribute('position',new T.Float32BufferAttribute(pos,3));g.setAttribute('color',new T.Float32BufferAttribute(col,3));g.setIndex(idx);g.computeVertexNormals();
+  const m=new T.Mesh(g,new T.MeshStandardMaterial({vertexColors:true,roughness:.62,metalness:.35,side:T.DoubleSide}));m.castShadow=m.receiveShadow=true;world.add(m);
+  const sh=new T.Shape();for(let i=0;i<=N;i++){const t=i/N;i?sh.lineTo(bw(t)*1.03,-(z0+Lh*t)):sh.moveTo(bw(t)*1.03,-(z0+Lh*t))}for(let i=N;i>=0;i--){const t=i/N;sh.lineTo(-bw(t)*1.03,-(z0+Lh*t))}
+  const dk=new T.Mesh(new T.ShapeGeometry(sh),M.metalDk);dk.rotation.x=-Math.PI/2;dk.position.y=DK-.04;dk.receiveShadow=true;world.add(dk)}
+function zoneDique(){
+  for(const k of['map','normalMap','orm'])TX.floor[k].repeat.set(54/5,114/5);
+  const fl=new T.Mesh(new T.PlaneGeometry(54,114),M.floor);fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;world.add(fl);
+  gGround();outskirts(-62,-1,-70,70);outskirts(62,1,-70,70);
+  if(!M.bronze)M.bronze=new T.MeshStandardMaterial({color:0xb68a3c,roughness:.38,metalness:1});
+  const alt=level%2===0,QH=3;
+  // muelles laterales (3 m sobre el fondo del dique) y cierre exterior
+  for(const sx of[-1,1]){B(8.4,QH,56.6,M.concDk,sx*22.2,QH/2,0,{tu:4,tv:4});addCol(sx*22.2,0,8.4,56.6,0,QH);
+    B(.25,.04,56.6,M.rail,sx*18.2,QH+.015,0,{cast:false});
+    B(.6,3,56.6,M.conc,sx*26.6,QH+1.5,0);B(.76,.12,56.6,M.metalDk,sx*26.6,QH+3.06,0);addCol(sx*26.6,0,.6,56.6,0,30);
+    for(const sz of[-1,1]){B(8.4,2.6,.3,M.conc,sx*22.2,QH+1.3,sz*28.3);addCol(sx*22.2,sz*28.3,8.4,.3,0,30)}
+    for(const bz of[-22,-12,10,22]){C(.22,.28,.5,M.black,sx*18.9,QH+.25,bz,{seg:12});addCol(sx*18.9,bz,.5,.5,QH,QH+.5)}}
+  fenceRun(-18,18,-28.3);for(const sx of[-3,3])B(.1,3,.1,M.rail,sx,1.5,-28.28,{cast:false});
+  fenceRun(-18,-3,28.3);fenceRun(3,18,28.3);makeGate(0,28.3,6);
+  // barco sobre picaderos
+  shipHull();addCol(0,-1,5.6,26,0,2.6);addCol(0,-1,9.2,26,2.6,9);addCol(0,-16,5,4,2.2,9);addCol(0,-15.5,1.2,3,0,2.2);addCol(0,13.5,5.4,3,2.4,9);addCol(0,13,1.6,4,0,2.4);addCol(0,15.4,2.6,1.4,3,9);
+  for(let z2=-13;z2<=13;z2+=2.6){B(1.5,1.05,.9,M.conc,0,.525,z2,{cast:false});B(1.3,.26,.8,M.frame,0,1.18,z2,{cast:false});
+    if(z2>-11&&z2<9&&Math.round(z2/2.6)%2===0)for(const sx of[-1,1]){B(.9,1.5,.9,M.conc,sx*2.5,.75,z2,{cast:false});B(.8,.3,.8,M.frame,sx*2.6,1.62,z2,{rz:sx*.5,cast:false})}}
+  B(.3,3.4,1.9,M.metalDk,0,3.3,-18.9);addCol(0,-18.9,.4,1.9,0,5);C(.16,.16,2.2,M.metal,0,3.1,-17.2,{rx:Math.PI/2,seg:10,cast:false});C(.34,.2,.7,M.bronze,0,3.1,-17.95,{rx:Math.PI/2,seg:14});
+  for(let k=0;k<4;k++){const a=k*Math.PI/2+.4;B(.75,1.5,.1,M.bronze,Math.sin(a)*.95,3.1+Math.cos(a)*.95,-17.9,{rz:-a,ry:.45})}
+  B(6.4,3,7.5,M.white,0,10.5,-9);B(4.8,2.5,4.6,M.white,0,13.25,-9.8);B(5,.14,4.8,M.metalDk,0,14.55,-9.8,{cast:false});B(4.4,.7,.05,glow(.85,.9,1,.5),0,13.5,-7.48,{cast:false,recv:false});
+  C(.75,.9,3.2,M.crane,0,13.6,-4.2,{seg:16});C(.05,.05,5,M.metal,0,17,-10.5,{seg:6});B(.9,1,1.3,M.metalDk,0,9.5,6);B(2.4,1.1,2.4,M.metalDk,0,9.55,1);
+  { const p=new T.Mesh(new T.PlaneGeometry(5.2,1),new T.MeshStandardMaterial({map:textTex(512,96,(q,w,h)=>{q.fillStyle='#d9dcdf';q.font='900 70px '+FONT;q.fillText('KRONOS VII',w/2,h/2+6)},.4),transparent:true,roughness:.6,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));p.rotation.y=Math.PI;p.position.set(0,7.6,-18.04);world.add(p)}
+  // puntales entre los muelles y el casco
+  for(const s of[[1,-14],[1,-7],[-1,7],[-1,12]]){B(13.7,.28,.28,M.metalDk,s[0]*11.35,4.05,s[1],{rz:-s[0]*.215,cast:false})}
+  // escalera oeste con descanso; pasarela del muelle al andamio de babor
+  stairs(-17.25,-14,-Math.PI/2,QH,1.4);B(1.4,QH,2,M.concDk,-17.25,QH/2,-8.5);addCol(-17.25,-8.5,1.5,2,0,QH);rail(-16.5,-9.5,-16.5,-7.5,QH);rail(-18,-7.5,-16.5,-7.5,QH);
+  rail(-18.05,-27.8,-18.05,-9.6,QH);rail(-18.05,-7.4,-18.05,-2.9,QH);rail(-18.05,-1.1,-18.05,27.8,QH);
+  deck(-12.7,-2,10.6,1.6,QH);rail(-18,-2.8,-7.4,-2.8,QH);rail(-18,-1.2,-7.4,-1.2,QH);
+  deck(-6.3,-2,2.2,10,QH);rail(-7.4,-7,-7.4,-2.9,QH);rail(-7.4,-1.1,-7.4,3,QH);crate(-6.3,QH,-6,0,.8,.7,.9,true);
+  // rampa este (pendiente suave) con descanso; andamio de estribor con su escalera
+  { const sh=new T.Shape();sh.moveTo(0,0);sh.lineTo(12,0);sh.lineTo(12,QH);sh.lineTo(0,0);const gm=new T.ExtrudeGeometry(sh,{depth:3,bevelEnabled:false}),uv=gm.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)/4,uv.getY(i)/4);
+    const rm=new T.Mesh(gm,M.concDk);rm.rotation.y=Math.PI/2;rm.position.set(15,0,14);rm.castShadow=rm.receiveShadow=true;world.add(rm);
+    for(let i=0;i<15;i++)addCol(16.5,14-(i+.5)*.8,3,.8,0,(i+1)*.2);softCol(14.96,8,.08,12,0,QH+1.1);
+    B(.06,.06,12.4,M.rail,15,2.55,8,{rx:-Math.atan2(QH,12),cast:false});for(let i=0;i<=4;i++)C(.024,.024,1.05,M.rail,15,i*.75+.52,14-i*3,{seg:6,cast:false});
+    B(3,QH,2,M.concDk,16.5,QH/2,1);addCol(16.5,1,3,2,0,QH);rail(15,2,15,0,QH);rail(15,0,18,0,QH)}
+  rail(18.05,-27.8,18.05,-.1,QH);rail(18.05,2.1,18.05,27.8,QH);
+  deck(6.3,5,2.2,12,QH);stairs(6.3,15.6,Math.PI/2,QH,1.2);rail(7.4,-1,7.4,11,QH);rail(5.2,-1,7.4,-1,QH);crate(6.3,QH,1,0,.8,.7,.9);
+  // grúa pórtico sobre el dique
+  for(const sx of[-1,1])for(const sz of[-1,1]){B(.8,14.5,.8,M.crane,sx*22,QH+7.25,-3+sz*3);addCol(sx*22,-3+sz*3,.8,.8,QH,QH+14.5)}
+  for(const sx of[-1,1])B(.6,.6,6.8,M.crane,sx*22,QH+13,-3,{cast:false});
+  for(const sz of[-1,1])B(47,1.3,.7,M.crane,0,QH+14.9,-3+sz*1.2);B(2.6,1.2,3.2,M.metalDk,3,QH+15.2,-3);C(.025,.025,5.2,M.black,3,QH+12,-3,{seg:6,cast:false});B(.7,.9,.5,M.rail,3,QH+9.2,-3);
+  // trabajo en el fondo del dique: vehículos, carga y cobertura
+  veh('autoelevador',11,-3,alt?2.4:-.6);veh(alt?'tractor_rojo':'tractor_azul',-11.5,14,Math.PI/2+.08);
+  container(10.5,0,-19,.06,M.cOchre,null,true);container(-11,0,-21.5,-.05,M.cTeal,null,true);container(12,0,21.5,Math.PI/2,M.cRed,null,true);
+  container(-22.6,QH,12,Math.PI/2,M.cBlue,null,true);container(22.8,QH,-17,Math.PI/2,M.cOchre,null,true);
+  crate(-10,0,-9,.3,1.3,.8,.9,true);crate(-11.2,0,-8.2,.8,.9,.7,.9);crate(9.5,0,19,.2,1.3,.8,.9);crate(-9,0,22,.5,1.3,.8,.9,true);crate(9,0,-11,.1,1.3,.8,.9);crate(9.1,.8,-11.1,.4,1,.6,.8,true);crate(-13,0,3.5,.2,1.3,.8,.9);
+  crate(-21,QH,-18,.3,1.3,.8,.9,true);crate(21.5,QH,8,.5,1.3,.8,.9);crate(-23,QH,-3,.1,1.3,.8,.9);crate(22,QH,20,.2,1.3,.8,.9,true);
+  barrel(-9.5,6,M.pRed);barrel(-10.2,6.6,M.pBlue);barrel(10.5,13.5,M.pBlue);barrel(11.2,13,M.pRed);barrel(13,-9,M.pBlue);barrel(-13.5,-18,M.pRed);barrel(7,24,M.pBlue);
+  barrier(-12,-13,Math.PI/2+.1);barrier(11,3.5,.1);barrier(-9.5,10,.2);barrier(-6,23,Math.PI/2);barrier(5,-23,Math.PI/2+.2);barrier(12.5,9,Math.PI/2);barrier(-13,19,.1);
+  tires(13.5,-14,3);tires(-8,-16,2);
+  for(const s of[[8.2,-6.5],[8.6,-6.2],[-8.4,3.2]]){C(.12,.12,1.5,s[0]>8.4?M.pBlue:M.pRed,s[0],.75,s[1],{seg:10})}addCol(8.4,-6.35,.7,.6,0,1.5);addCol(-8.4,3.2,.3,.3,0,1.5);
+  gMark(textTex(512,128,(x,w,h)=>{x.fillStyle='#d8dadc';x.font='900 84px '+FONT;x.fillText('DIQUE 2 · CASCO EN OBRA',w/2,h/2+6)},.44),8,1.6,9.5,-24.5,Math.PI);
+  // luces: foco en el pórtico, luz de trabajo bajo la popa, farolas en los muelles
+  L.canopy.position.set(2.2,2.3,-20.6);L.canopy.intensity=60;gPool(1.5,-21,4.5,new T.Color(.09,.08,.06));B(.5,.3,.12,glow(1,.86,.6,8),2.2,2.3,-20.75,{cast:false,recv:false});C(.04,.04,2.2,M.metal,2.2,1.1,-20.8,{seg:6,cast:false});
+  for(const fz of[-.8,0,.8])B(.5,.26,.03,glow(.8,.9,1,22),-12+fz,QH+14.1,-1.7,{cast:false,recv:false});
+  setFlood(-12,QH+14,-1.6,6,0,8);
+  { const vm=volMat(new T.Color(.7,.82,1).multiplyScalar(.03),30),cone=new T.Mesh(new T.ConeGeometry(17,30,40,1,true),vm);cone.position.set(-12,QH+14,-1.6);cone.geometry.translate(0,-15,0);vm.uniforms.uH.value=60;cone.lookAt(6,0,8);cone.rotateX(-Math.PI/2);world.add(cone)}
+  lamp(-19.4,-19,1,false);lamp(-19.4,17,1,true);lamp(19.4,-10,-1,false);lamp(19.4,22,-1,false);lamp(13.5,-25,-1,false);
+  const bl=glow(1,.08,.05,3);C(.13,.13,.2,bl,3,QH+16,-3,{cast:false});L.beacon.position.set(3,QH+16.1,-3);beacon={lm:bl,x:3,z:-3};
+  return{name:'Dique seco',b:[-17.2,17.2,-27.2,27.2],start:[3,-25.6,Math.PI],env:[10,1.9,-8],steam:[7.6,-6.3],
+    spawns:[[-17.3,-21,3.2],[-17.3,4,3.2],[-17.3,21,3.2],[17.3,-19,3.2],[17.3,-9,3.2],[17.3,22,3.2],[12,-27.6,0],[-12,27.6,0],[12,27.6,0],[-10,-27.6,0]]}}
+const ZONES=[zoneMuelle,zonePlaya,zoneCamiones,zoneGraneles,zoneDique];
 function loadZone(lv){
   world.traverse(o=>{if(o.geometry&&!o.userData.keep)o.geometry.dispose()});while(world.children.length)world.remove(world.children[0]);
   cols.length=0;lamps.length=0;for(const s of lampPool)s.intensity=0;L.canopy.intensity=0;L.water=null;beacon=null;if(gate){scene.remove(gate.g);gate=null}
