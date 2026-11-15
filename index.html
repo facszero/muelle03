@@ -488,7 +488,7 @@ function zoneMuelle(){
   B(1.6,.9,.05,glow(1,.82,.55,2.6),-24.6,1.6,43.68,{cast:false,recv:false});B(.9,2,.06,M.pBlue,-26.9,1,43.68,{cast:false});pool(-24.6,42.4,3.5,new T.Color(.16,.12,.07));
   lamp(-29.3,34,1,false);lamp(-8.5,39,1,false);lamp(29.3,13,-1,false);
   // vehículos estacionados: en el nivel 1, los dos camiones sin acoplado y un autoelevador; después alternan de lugar
-  { const sw=level>1&&(level>>1)%2===1,mid=sw?['tractor_rojo','tractor_azul']:['tractor_azul','tractor_rojo'];veh(mid[0],23.5,30,Math.PI/2);veh(mid[1],-22.5,17.5,.2);veh('autoelevador',9,17.5,-.5)}
+  { const sw=level>1&&Math.floor((level-1)/ZONES.length)%2===1,mid=sw?['tractor_rojo','tractor_azul']:['tractor_azul','tractor_rojo'];veh(mid[0],23.5,30,Math.PI/2);veh(mid[1],-22.5,17.5,.2);veh('autoelevador',9,17.5,-.5)}
   return{name:'Patio de contenedores',b:[-28.4,28.2,-16.2,48.6],start:[-1.4,27.5,.06],env:[-.5,1.9,2],steam:[3.2,-14.2],
     spawns:[[-29.3,-9,5.15],[-29.3,2,5.15],[-29.3,14,5.15],[-29.3,22,5.15],[-29.3,38.5,5.15],[-29.3,48.6,5.15],[-22,-17,10.3],[-14,-17,10.3],[16,-17,10.3],[24,-17,10.3],[-3,49.3,0],[0,49.3,0],[3,49.3,0],[20,49.3,0],[-14,49.3,0]]}}
 function buildSky(){
@@ -629,7 +629,7 @@ function zonePlaya(){
   wagon('flat',-4,-13);
   for(const w of[[-16,-42],[-10,40],[-4,44],[-16,38]])B(3,2.9,12.6,[M.cRed,M.cBlue,M.cOchre,M.cTeal][(w[0]+w[1]+60)%4],w[0],2.65,w[1],{cast:false});
   // patio de camiones
-  { const alt=(level>>1)%2===1;veh(alt?'camion_cisterna':'camion_contenedor',7,-12,Math.PI+.12);veh(alt?'tractor_rojo':'tractor_azul',9.5,12.5,Math.PI/2);veh('autoelevador',11.5,5.5,.7+Math.PI/2);veh('autoelevador',2.2,19,-2.4+Math.PI/2)}
+  { const alt=Math.floor((level-1)/ZONES.length)%2===0;veh(alt?'camion_cisterna':'camion_contenedor',7,-12,Math.PI+.12);veh(alt?'tractor_rojo':'tractor_azul',9.5,12.5,Math.PI/2);veh('autoelevador',11.5,5.5,.7+Math.PI/2);veh('autoelevador',2.2,19,-2.4+Math.PI/2)}
   container(8.5,0,19.5,.06,M.cOchre,LA,true);container(3,0,5,Math.PI/2+.1,M.cBlue,LK,true);
   crate(12.4,0,7.2,.7,1.2,.14,1,false);crate(12.4,.14,7.2,.7,1.1,.8,.9,true);crate(-1,0,-6,.2,1.3,.8,.9);crate(-.8,.8,-6.1,-.1,1,.6,.8);crate(.5,0,-5.2,.9,.9,.7,.9,true);
   crate(13,0,-20,.1,1.3,.8,.9);crate(14.4,0,-19.4,.6,.9,.9,.9,true);crate(-21,0,3,.3,1.3,.8,.9,true);crate(-20.6,0,-20,.2,1.3,.8,.9);
@@ -646,7 +646,60 @@ function zonePlaya(){
   C(.05,.05,1.3,M.metal,24.15,7.4,-24);const bl=glow(1,.08,.05,3);C(.13,.13,.2,bl,24.15,8.15,-24,{cast:false});L.beacon.position.set(24.1,8.15,-24);beacon={lm:bl,x:24.1,z:-24};
   return{name:'Playa ferroviaria',b:[-23.4,17.5,-27.2,27.2],start:[9,-24.5,Math.PI],env:[5,1.9,0],
     spawns:[[-23.5,-21,5.15],[-23.5,-6,5.15],[-23.5,8,5.15],[-23.5,23,5.15],[17.3,-18,6.3],[17.3,-4,6.3],[17.3,4,6.3],[17.3,18,6.3],[1,27,0],[-20,27,0],[-20,-27,0],[18,26.8,0]]}}
-const ZONES=[zoneMuelle,zonePlaya];
+/* ================= zona 3: playa de camiones y aduana ================= */
+function booth(x,z,sign){B(1.6,2.5,2.2,M.white,x,1.25,z);B(1.9,.1,2.5,M.metalDk,x,2.56,z,{cast:false});addCol(x,z,1.6,2.2,0,2.6);contactShadow(x,z,1.6,2.2);
+  for(const sx of[-1,1])B(.04,.8,1.3,glow(1,.85,.6,2.2),x+sx*.81,1.65,z,{cast:false,recv:false});B(1.1,.8,.04,glow(1,.85,.6,2.2),x,1.65,z-1.11,{cast:false,recv:false});
+  B(2,.2,9.4,M.conc,x,.1,z,{cast:false});B(2.04,.06,.5,M.rail,x,.2,z-4.5,{cast:false});B(2.04,.06,.5,M.rail,x,.2,z+4.5,{cast:false});
+  C(.07,.07,1.1,M.rail,x+sign*.95,.55,z+1.7,{seg:8});addCol(x+sign*.95,z+1.7,.2,.2,0,1.1);B(3.1,.07,.07,M.pRed,x+sign*1.75,2.2,z+1.7,{rz:sign*1.02,cast:false});B(.3,.5,.3,M.metalDk,x+sign*.95,.75,z+1.7,{cast:false})}
+function tires(x,z,n){for(let i=0;i<n;i++){const t=new T.Mesh(new T.TorusGeometry(.42,.17,8,18),M.black);t.rotation.x=Math.PI/2;t.position.set(x+(i%2)*.04,.17+i*.33,z);t.castShadow=true;world.add(t)}addCol(x,z,1.15,1.15,0,n*.33+.02);contactShadow(x,z,.9,.9)}
+function zoneCamiones(){
+  for(const k of['map','normalMap','orm'])TX.floor[k].repeat.set(54/5,110/5);
+  const fl=new T.Mesh(new T.PlaneGeometry(54,110),M.floor);fl.rotation.x=-Math.PI/2;fl.receiveShadow=true;world.add(fl);
+  gGround();outskirts(-60,-1,-70,70);outskirts(60,1,-70,70);
+  const LK=gLab('KRONOS','KRLU 880142 6','#e9edf0'),LA=gLab('AUSTRAL','ASTU 512907 3','#1b1b1b'),alt=level%2===0;
+  // perímetro: muro oeste, edificio de aduana al este, vallas norte y sur
+  B(.6,5,52.6,M.conc,-26.6,2.5,0);B(.76,.12,52.6,M.metalDk,-26.6,5.06,0);addCol(-26.6,0,.6,52.6,0,30);
+  B(1,7.5,52.6,M.concDk,26.8,3.75,0);addCol(26.8,0,1,52.6,0,30);B(1.25,.3,52.8,M.metalDk,26.8,7.65,0,{cast:false});
+  { const blind=new T.MeshBasicMaterial({map:textTex(64,64,(x,w,h)=>{x.fillStyle='#e8b877';x.fillRect(0,0,w,h);x.fillStyle='#5a3c1c';for(let i=0;i<16;i++)x.fillRect(0,i*4,w,1.5)}),color:new T.Color(2.2,1.9,1.5),fog:false});
+    for(let i=0;i<12;i++){const z2=-22+i*4;B(.1,1.4,2.4,M.metalDk,26.28,5.2,z2,{cast:false});B(.06,1.2,2.2,(i*5)%7<2?blind:M.glass,26.25,5.2,z2,{cast:false})}
+    B(.14,2.4,1.3,M.metalDk,26.26,1.2,-4,{cast:false});B(.1,2.2,1.1,M.pBlue,26.2,1.1,-4,{cast:false});B(1.5,.1,2.6,M.metalDk,25.6,2.9,-4,{cast:false});C(.03,.03,1.8,glow(.75,.95,1,10),25.5,2.82,-4,{rx:Math.PI/2,seg:8,cast:false});gPool(25.2,-4,3,new T.Color(.07,.09,.1));
+    const sg=new T.Mesh(new T.PlaneGeometry(5,.9),new T.MeshBasicMaterial({map:textTex(512,92,(x,w,h)=>{x.fillStyle='#050505';x.fillRect(0,0,w,h);x.fillStyle='#ffb347';x.font='800 70px '+FONT;x.fillText('ADUANA · MUELLE 03',w/2,h/2+5)}),color:new T.Color(2.6,2.6,2.6),fog:false}));sg.rotation.y=-Math.PI/2;sg.position.set(26.27,3.75,-4);world.add(sg)}
+  fenceRun(-26.4,26.4,-26.3);for(const sx of[-3,3])B(.1,3,.1,M.rail,sx,1.5,-26.28,{cast:false});
+  fenceRun(-26.4,-3,26.3);fenceRun(3,26.4,26.3);makeGate(0,26.3,6);
+  // carriles de control con techo, casetas y barreras
+  B(15.4,.3,11,M.metalDk,4,5.65,-6);B(15.5,.9,.12,M.concDk,4,5.2,-11.5,{cast:false});B(15.5,.9,.12,M.concDk,4,5.2,-.5,{cast:false});
+  for(const bx of[-1,4,9]){booth(bx,-6,bx===9?-1:1);for(const z2 of[-10.6,-1.4]){C(.14,.14,5.5,M.metal,bx,2.75,z2,{seg:10});addCol(bx,z2,.3,.3,0,5.5)}}
+  for(const lx of[-3,1.5,6.5,11]){B(.14,.06,6,glow(.8,.92,1,7),lx,5.46,-6,{cast:false,recv:false});gPool(lx,-6,4.4,new T.Color(.065,.08,.095))}
+  L.canopy.position.set(4,4.7,-6);L.canopy.intensity=85;
+  { const sg=new T.Mesh(new T.PlaneGeometry(9,.75),new T.MeshBasicMaterial({map:textTex(1024,86,(x,w,h)=>{x.fillStyle='#050505';x.fillRect(0,0,w,h);x.fillStyle='#ffb347';x.font='800 64px '+FONT;x.fillText('CONTROL ADUANERO · DETENGA EL MOTOR',w/2,h/2+5)}),color:new T.Color(2.6,2.6,2.6),fog:false}));sg.rotation.y=Math.PI;sg.position.set(4,5.2,-11.57);world.add(sg)}
+  // pasarela de inspección elevada
+  deck(4,-15,14,1.6,3.2);stairs(-7.8,-15,0,3.2,1.1);rail(-3,-15.8,11,-15.8,3.2);rail(-3,-14.2,11,-14.2,3.2);rail(11,-15.8,11,-14.2,3.2);crate(8,3.2,-15,.1,1.2,.8,.9,true);
+  // báscula
+  B(3.4,.12,14,M.grate,-8.5,.06,-6,{cast:false});for(const sx of[-1,1])B(.12,.13,14,M.rail,-8.5+sx*1.76,.065,-6,{cast:false});
+  B(1.8,2.4,1.8,M.white,-11.6,1.2,-6);addCol(-11.6,-6,1.8,1.8,0,2.4);contactShadow(-11.6,-6,1.8,1.8);B(.04,.7,1,glow(1,.85,.6,2.2),-10.68,1.6,-6,{cast:false,recv:false});
+  gMark(textTex(512,128,(x,w,h)=>{x.fillStyle='#d8dadc';x.font='900 96px '+FONT;x.fillText('BÁSCULA',w/2,h/2+6)},.44),5,1.25,-8.5,-15.2);
+  // oficina, neumáticos y carga suelta al oeste
+  B(6,2.6,2.6,M.white,-21.5,1.3,-19);addCol(-21.5,-19,6,2.6,0,2.6);contactShadow(-21.5,-19,6,2.6);B(6.3,.1,2.9,M.metalDk,-21.5,2.65,-19,{cast:false});B(1.8,.9,.05,glow(1,.82,.55,2.4),-20.4,1.6,-17.68,{cast:false,recv:false});B(.9,2,.06,M.pBlue,-23.4,1,-17.68,{cast:false});gPool(-20.4,-16.6,3.4,new T.Color(.15,.11,.065));
+  tires(-23.5,-9,3);tires(-22.2,-9.3,2);tires(-23.2,-7.8,3);tires(18,-20.5,3);tires(19.3,-20.2,2);
+  veh('autoelevador',-17.5,-11,alt?2.2:-.6);veh('autoelevador',19,-8,alt?-2:1.1);
+  crate(-18,0,-3,.2,1.3,.8,.9,true);crate(-19.4,0,-2.4,.7,.9,.7,.9);crate(-18.1,.8,-3,-.1,1,.6,.8);crate(15,0,-17,.1,1.3,.8,.9);crate(16.3,0,-16.2,.5,.9,.9,.9,true);crate(21,0,2,.3,1.3,.8,.9,true);
+  barrel(-22,3,M.pBlue);barrel(-22.8,3.6,M.pRed);barrel(22.5,-14,M.pBlue);barrel(23.2,-13.4,M.pBlue);barrel(13.5,2.5,M.pRed);
+  container(22.6,0,-1.5,Math.PI/2,M.cOchre,LA,true);container(-21,0,21.5,.05,M.cBlue,LK,true);container(20.5,0,21.8,-.04,M.cRed,null,true);
+  barrier(-4.5,1.5,Math.PI/2);barrier(13,-1,.1);barrier(-14,3,.2);barrier(1,-19,Math.PI/2+.1);barrier(-13,-21,.3);barrier(9,21,Math.PI/2);barrier(-8,21.5,Math.PI/2);
+  // playa de estacionamiento: los camiones alternan de lugar según el nivel
+  { const big=alt?['camion_contenedor','camion_cisterna']:['camion_cisterna','camion_contenedor'],mid=alt?['tractor_azul','tractor_rojo']:['tractor_rojo','tractor_azul'];
+    veh(big[0],-19,10,Math.PI/2);veh(big[1],-11,10.5,Math.PI/2);veh(mid[0],8,8,Math.PI/2);veh(mid[1],16,9,-Math.PI/2);
+    const lt=textTex(32,512,(x,w,h)=>{x.fillStyle='#d8dadc';x.fillRect(6,0,w-12,h)},.4);for(const lx of[-23,-15,-7,4,12,20])gMark(lt,.16,14,lx,10);
+    gMark(textTex(512,128,(x,w,h)=>{x.fillStyle='#d9a31a';x.font='900 84px '+FONT;x.fillText('SALIDA',w/2,h/2+6)},.42),5,1.25,0,20)}
+  // foco principal sobre el edificio de aduana
+  B(.5,.5,2.6,M.metalDk,26.3,8.6,2,{cast:false});for(const fz of[-.8,0,.8])B(.03,.26,.5,glow(.8,.9,1,22),26.03,8.55,2+fz,{cast:false,recv:false});
+  setFlood(25.9,8.6,2,-2,0,2);
+  { const vm=volMat(new T.Color(.7,.82,1).multiplyScalar(.035),30),cone=new T.Mesh(new T.ConeGeometry(17,30,40,1,true),vm);cone.position.set(25.9,8.6,2);cone.geometry.translate(0,-15,0);vm.uniforms.uH.value=60;cone.lookAt(-2,0,2);cone.rotateX(-Math.PI/2);world.add(cone)}
+  lamp(-25.9,-14,1,false);lamp(-25.9,13,1,true);lamp(25.9,-18,-1,false);lamp(25.9,15,-1,false);lamp(-4.2,21,1,false);
+  C(.05,.05,1.2,M.metal,-3.5,6.4,-11.3);const bl=glow(1,.08,.05,3);C(.13,.13,.2,bl,-3.5,7.1,-11.3,{cast:false});L.beacon.position.set(-3.5,7.1,-11.3);beacon={lm:bl,x:-3.5,z:-11.3};
+  return{name:'Playa de camiones y aduana',b:[-25.4,25.2,-25.2,25.2],start:[1.5,-23.5,Math.PI],env:[0,1.9,6],
+    spawns:[[-25.3,-20,5.15],[-25.3,-6,5.15],[-25.3,6,5.15],[-25.3,20,5.15],[25.3,-16,7.9],[25.3,6,7.9],[25.3,20,7.9],[-22,25,0],[22,25,0],[-22,-25,0],[12,25,0]]}}
+const ZONES=[zoneMuelle,zonePlaya,zoneCamiones];
 function loadZone(lv){
   world.traverse(o=>{if(o.geometry&&!o.userData.keep)o.geometry.dispose()});while(world.children.length)world.remove(world.children[0]);
   cols.length=0;lamps.length=0;for(const s of lampPool)s.intensity=0;L.canopy.intensity=0;L.water=null;beacon=null;if(gate){scene.remove(gate.g);gate=null}
