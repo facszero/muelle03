@@ -2,7 +2,7 @@
 
 FPS por niveles en three.js r128. El escenario, las texturas y el audio son procedurales; los assets externos son modelos GLB: `soldado.glb` (enemigos animados) y seis vehículos de decorado (`autoelevador`, `tractor_azul`, `tractor_rojo`, `camion_contenedor`, `camion_cisterna`, `locomotora`).
 
-Un puerto de noche y con lluvia. La campaña tiene diez niveles de tres oleadas cada uno; al despejar una zona se abre el portón hacia la siguiente. Por ahora hay tres zonas (patio de contenedores, playa ferroviaria, y playa de camiones y aduana) que se repiten en ese orden. El progreso se guarda en el navegador.
+Un puerto de noche y con lluvia. La campaña tiene diez niveles de tres oleadas cada uno; al despejar una zona se abre el portón hacia la siguiente. Por ahora hay cuatro zonas (patio de contenedores, playa ferroviaria, playa de camiones y aduana, y terminal de graneles) que se repiten en ese orden. El progreso se guarda en el navegador.
 
 Creado por Fernando Cañete.
 
