@@ -596,7 +596,7 @@ function veh(name,x,z,rot){const g=VEH[name],D=VDEF[name],c=Math.cos(rot),s=Math
   let x0=1e9,x1=-1e9,W=0;for(const k of D){addCol(x+k[0]*c,z-k[0]*s,k[1],k[2],0,k[3],rot);x0=Math.min(x0,k[0]-k[1]/2);x1=Math.max(x1,k[0]+k[1]/2);W=Math.max(W,k[2])}
   const mc=(x0+x1)/2;contactShadow(x+mc*c,z-mc*s,x1-x0,W,rot);
   const m=new T.Mesh(g.geo,g.mat);m.position.set(x,0,z);m.rotation.y=rot;m.castShadow=m.receiveShadow=true;m.userData.keep=true;world.add(m)}
-function loadVehicles(){if(!T.GLTFLoader)return;const names=Object.keys(VDEF);let left=names.length,got=0;const ld=new T.GLTFLoader();
+function loadVehicles(){if(!T.GLTFLoader)return;const names=Object.keys(VDEF).concat('barco');let left=names.length,got=0;const ld=new T.GLTFLoader();
   const done=()=>{if(--left===0&&got&&state==='menu'){try{loadZone(level-1)}catch(e){console.warn(e)}}};
   for(const n of names)ld.load(n+'.glb',g=>{let m=null;g.scene.traverse(o=>{if(o.isMesh&&!m)m=o});if(m){m.material.envMapIntensity=.9;if(m.material.map)m.material.map.anisotropy=Math.min(4,maxAniso);VEH[n]={geo:m.geometry,mat:m.material};got++}done()},undefined,done)}
 
@@ -781,14 +781,17 @@ function zoneDique(){
   fenceRun(-18,18,-28.3);for(const sx of[-3,3])B(.1,3,.1,M.rail,sx,1.5,-28.28,{cast:false});
   fenceRun(-18,-3,28.3);fenceRun(3,18,28.3);makeGate(0,28.3,6);
   // barco sobre picaderos
-  shipHull();addCol(0,-1,5.6,26,0,2.6);addCol(0,-1,9.2,26,2.6,9);addCol(0,-16,5,4,2.2,9);addCol(0,-15.5,1.2,3,0,2.2);addCol(0,13.5,5.4,3,2.4,9);addCol(0,13,1.6,4,0,2.4);addCol(0,15.4,2.6,1.4,3,9);
-  for(let z2=-13;z2<=13;z2+=2.6){B(1.5,1.05,.9,M.conc,0,.525,z2,{cast:false});B(1.3,.26,.8,M.frame,0,1.18,z2,{cast:false});
-    if(z2>-11&&z2<9&&Math.round(z2/2.6)%2===0)for(const sx of[-1,1]){B(.9,1.5,.9,M.conc,sx*2.5,.75,z2,{cast:false});B(.8,.3,.8,M.frame,sx*2.6,1.62,z2,{rz:sx*.5,cast:false})}}
+  const SHIP=VEH.barco;
+  if(SHIP){const m=new T.Mesh(SHIP.geo,SHIP.mat);m.position.set(0,1.3,-1);m.rotation.y=Math.PI/2;m.scale.set(1,1.3,1.3);m.castShadow=m.receiveShadow=true;m.userData.keep=true;world.add(m);
+    addCol(0,-1,8.9,28,0,9);addCol(0,-16.6,6.8,3.2,0,9);addCol(0,14.6,6.8,3.2,0,9);addCol(0,-9,7,9,9,15)}
+  else{shipHull();addCol(0,-1,5.6,26,0,2.6);addCol(0,-1,9.2,26,2.6,9);addCol(0,-16,5,4,2.2,9);addCol(0,-15.5,1.2,3,0,2.2);addCol(0,13.5,5.4,3,2.4,9);addCol(0,13,1.6,4,0,2.4);addCol(0,15.4,2.6,1.4,3,9);
   B(.3,3.4,1.9,M.metalDk,0,3.3,-18.9);addCol(0,-18.9,.4,1.9,0,5);C(.16,.16,2.2,M.metal,0,3.1,-17.2,{rx:Math.PI/2,seg:10,cast:false});C(.34,.2,.7,M.bronze,0,3.1,-17.95,{rx:Math.PI/2,seg:14});
   for(let k=0;k<4;k++){const a=k*Math.PI/2+.4;B(.75,1.5,.1,M.bronze,Math.sin(a)*.95,3.1+Math.cos(a)*.95,-17.9,{rz:-a,ry:.45})}
   B(6.4,3,7.5,M.white,0,10.5,-9);B(4.8,2.5,4.6,M.white,0,13.25,-9.8);B(5,.14,4.8,M.metalDk,0,14.55,-9.8,{cast:false});B(4.4,.7,.05,glow(.85,.9,1,.5),0,13.5,-7.48,{cast:false,recv:false});
-  C(.75,.9,3.2,M.crane,0,13.6,-4.2,{seg:16});C(.05,.05,5,M.metal,0,17,-10.5,{seg:6});B(.9,1,1.3,M.metalDk,0,9.5,6);B(2.4,1.1,2.4,M.metalDk,0,9.55,1);
-  { const p=new T.Mesh(new T.PlaneGeometry(5.2,1),new T.MeshStandardMaterial({map:textTex(512,96,(q,w,h)=>{q.fillStyle='#d9dcdf';q.font='900 70px '+FONT;q.fillText('KRONOS VII',w/2,h/2+6)},.4),transparent:true,roughness:.6,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));p.rotation.y=Math.PI;p.position.set(0,7.6,-18.04);world.add(p)}
+  C(.75,.9,3.2,M.crane,0,13.6,-4.2,{seg:16});C(.05,.05,5,M.metal,0,17,-10.5,{seg:6});B(.9,1,1.3,M.metalDk,0,9.5,6);B(2.4,1.1,2.4,M.metalDk,0,9.55,1);}
+  for(let z2=-13;z2<=13;z2+=2.6){B(1.5,1.05,.9,M.conc,0,.525,z2,{cast:false});B(1.3,.26,.8,M.frame,0,1.18,z2,{cast:false});
+    if(z2>-11&&z2<9&&Math.round(z2/2.6)%2===0)for(const sx of[-1,1]){B(.9,1.5,.9,M.conc,sx*2.5,.75,z2,{cast:false});B(.8,.3,.8,M.frame,sx*2.6,1.62,z2,{rz:sx*.5,cast:false})}}
+  { const p=new T.Mesh(new T.PlaneGeometry(5.2,1),new T.MeshStandardMaterial({map:textTex(512,96,(q,w,h)=>{q.fillStyle='#d9dcdf';q.font='900 70px '+FONT;q.fillText('KRONOS VII',w/2,h/2+6)},.4),transparent:true,roughness:.6,depthWrite:false,polygonOffset:true,polygonOffsetFactor:-2}));p.rotation.y=Math.PI;p.position.set(0,SHIP?6.9:7.6,SHIP?-18.12:-18.04);world.add(p)}
   // puntales entre los muelles y el casco
   for(const s of[[1,-14],[1,-7],[-1,7],[-1,12]]){B(13.7,.28,.28,M.metalDk,s[0]*11.35,4.05,s[1],{rz:-s[0]*.215,cast:false})}
   // escalera oeste con descanso; pasarela del muelle al andamio de babor
