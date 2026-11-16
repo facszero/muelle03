@@ -74,8 +74,8 @@ body.play #ov{opacity:0;pointer-events:none}
 #acts{display:flex;flex-wrap:wrap;align-items:center;gap:14px 22px;margin-top:22px}
 #fs{pointer-events:auto;cursor:pointer;background:none;border:1.5px solid rgba(219,238,255,.45);color:var(--ice);padding:11px 20px 10px;font:600 18px 'Saira Condensed','Arial Narrow',sans-serif;transform:skewX(-10deg)}
 #fs:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
-#nw{pointer-events:auto;cursor:pointer;background:none;border:0;color:rgba(219,238,255,.75);padding:11px 4px 10px;font:600 17px 'Saira Condensed','Arial Narrow',sans-serif;text-decoration:underline;text-underline-offset:4px}
-#nw:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
+#nw,#ql{pointer-events:auto;cursor:pointer;background:none;border:0;color:rgba(219,238,255,.75);padding:11px 4px 10px;font:600 17px 'Saira Condensed','Arial Narrow',sans-serif;text-decoration:underline;text-underline-offset:4px}
+#nw:focus-visible,#ql:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
 #ovC{margin:18px 0 0;font-size:15px;color:rgba(219,238,255,.55)}
 #fade{position:fixed;inset:0;background:#000;opacity:0;pointer-events:none;transition:opacity .4s}
 #fade.on{opacity:1}
@@ -116,7 +116,7 @@ body.play #ov{opacity:0;pointer-events:none}
   <h1 id="ovT"><span>Zona portuaria, 03:14, lluvia</span>Muelle 03</h1>
   <p id="ovP">Un equipo de asalto ha tomado el depósito y viene a por ti. Despeja las diez zonas del puerto: tres oleadas en cada una.</p>
   <p id="ovK" class="k"></p>
-  <div id="acts"><button id="go" disabled>Preparando el patio…</button><button id="nw" hidden>Empezar desde el nivel 1</button><button id="fs" hidden>Pantalla completa</button></div>
+  <div id="acts"><button id="go" disabled>Preparando el patio…</button><button id="nw" hidden>Empezar desde el nivel 1</button><button id="fs" hidden>Pantalla completa</button><button id="ql" hidden></button></div>
   <p id="ovC">Creado por Fernando Cañete</p>
 </div>
 
@@ -136,7 +136,9 @@ if(!window.THREE){$('go').textContent='No se pudo cargar el motor 3D';return}
 const T=THREE,V3=T.Vector3;
 const QS=new URLSearchParams(location.search);
 const isTouch=(matchMedia('(pointer:coarse)').matches||'ontouchstart' in window)&&!QS.has('desktop');
-const LOW=isTouch||QS.has('low');
+const QMODES=['alta','fluido','nitido'],QNAME={alta:'completa',fluido:'fluida',nitido:'nítida'};let QM=QS.get('calidad');
+try{if(!QMODES.includes(QM))QM=localStorage.getItem('muelle03.calidad')}catch(e){}if(!QMODES.includes(QM))QM=isTouch?'fluido':'alta';
+const LITE=QM!=='alta',LOW=isTouch||QS.has('low')||LITE;
 if(isTouch)document.body.classList.add('touch');
 const clamp=(v,a,b)=>v<a?a:v>b?b:v,lerp=(a,b,t)=>a+(b-a)*t,frac=x=>x-Math.floor(x);
 const sst=(a,b,x)=>{x=clamp((x-a)/(b-a),0,1);return x*x*(3-2*x)};
@@ -146,15 +148,15 @@ const R=rng(90210),RR=(a,b)=>a+(b-a)*R();
 
 /* ================= renderer ================= */
 const canvas=$('c');
-const renderer=new T.WebGLRenderer({canvas,antialias:false,powerPreference:'high-performance',stencil:false,alpha:false});
+const renderer=new T.WebGLRenderer({canvas,antialias:QM==='nitido',powerPreference:'high-performance',stencil:false,alpha:false});
 renderer.physicallyCorrectLights=true;
-renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
+renderer.shadowMap.enabled=QM!=='nitido';renderer.shadowMap.type=LITE?T.PCFShadowMap:T.PCFSoftShadowMap;
 const gl2=renderer.capabilities.isWebGL2;
 const HDR=gl2?(renderer.extensions.has('EXT_color_buffer_float')||renderer.extensions.has('EXT_color_buffer_half_float')):renderer.extensions.has('EXT_color_buffer_half_float');
-const USE_PP=HDR&&!!(T.EffectComposer&&T.RenderPass&&T.ShaderPass&&T.UnrealBloomPass);
+const USE_PP=QM!=='nitido'&&HDR&&!!(T.EffectComposer&&T.RenderPass&&T.ShaderPass&&T.UnrealBloomPass);
 if(USE_PP){renderer.outputEncoding=T.LinearEncoding;renderer.toneMapping=T.NoToneMapping}
 else{renderer.outputEncoding=T.sRGBEncoding;renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15}
-const maxDpr=Math.min(window.devicePixelRatio||1,LOW?1.25:1.6);let dpr=maxDpr;
+const maxDpr=Math.min(window.devicePixelRatio||1,QM==='nitido'?2:QM==='fluido'?1:LOW?1.25:1.6),minDpr=Math.min(maxDpr,QM==='nitido'?1:QM==='fluido'?.8:.6);let dpr=maxDpr;
 const scene=new T.Scene();
 const FOGC=new T.Color(.022,.03,.048);
 scene.fog=new T.FogExp2(FOGC.getHex(),.0125);scene.fog.color.copy(FOGC);
@@ -344,7 +346,7 @@ function buildWorld(){
     M.fence=new T.MeshStandardMaterial({map:ft,transparent:true,side:T.DoubleSide,roughness:.45,metalness:.7,depthWrite:false})}
   // luces fijas: se crean una sola vez y cada zona las recoloca, para no recompilar shaders al cambiar de zona
   L.canopy=new T.PointLight(new T.Color(.72,.92,1),0,13,2);scene.add(L.canopy);
-  L.flood=new T.SpotLight(new T.Color(.78,.87,1),1500,70,.82,.6,2);L.flood.castShadow=true;L.flood.shadow.mapSize.set(LOW?1024:2048,LOW?1024:2048);L.flood.shadow.camera.near=3;L.flood.shadow.camera.far=60;L.flood.shadow.bias=-.0004;L.flood.shadow.normalBias=.035;scene.add(L.flood,L.flood.target);
+  L.flood=new T.SpotLight(new T.Color(.78,.87,1),1500,70,.82,.6,2);L.flood.castShadow=true;L.flood.shadow.mapSize.set(LITE?512:LOW?1024:2048,LITE?512:LOW?1024:2048);L.flood.shadow.camera.near=3;L.flood.shadow.camera.far=60;L.flood.shadow.bias=-.0004;L.flood.shadow.normalBias=.035;scene.add(L.flood,L.flood.target);
   L.beacon=new T.SpotLight(new T.Color(1,.08,.05),0,42,.42,.7,2);scene.add(L.beacon,L.beacon.target);
   L.hemi=new T.HemisphereLight(new T.Color(.2,.26,.42),new T.Color(.09,.07,.06),.9);scene.add(L.hemi);
   for(let i=0;i<6;i++){const sl=new T.SpotLight(new T.Color(1,.6,.28),0,24,.98,.75,2);scene.add(sl,sl.target);lampPool.push(sl)}
@@ -1448,7 +1450,7 @@ function resetLevel(){P.pos.set(Z.start[0],0,Z.start[1]);P.cy=0;P.vel.set(0,0,0)
   phase='waves';t0=time;drawAmmo();hud.hp();hud.ammo();startWave(0)}
 function overlay(kind,extra){const tt=$('ovT'),p=$('ovP'),k=$('ovK'),go=$('go');go.disabled=false;
   const ctl=isTouch?'Pulgar izquierdo para moverte, derecho para mirar. Mejor en horizontal.':'WASD para moverte, ratón para apuntar, clic para disparar, clic derecho para la mira, R recarga, Q cambia de arma, Espacio salta, Mayús corre, F pantalla completa.';
-  $('nw').hidden=!(kind==='menu'&&level>1);$('ovC').hidden=kind!=='menu';
+  $('nw').hidden=!(kind==='menu'&&level>1);$('ql').hidden=kind!=='menu';$('ovC').hidden=kind!=='menu';
   if(kind==='menu'){k.textContent=ctl;go.textContent=level>1?'Continuar en el nivel '+level:'Entrar al muelle'}
   else if(kind==='pause'){tt.innerHTML='<span>Muelle 03</span>En pausa';p.textContent='El equipo de asalto espera. La lluvia no.';k.textContent=ctl;go.textContent='Seguir'}
   else if(kind==='dead'){tt.innerHTML='<span>Nivel '+level+' · oleada '+(wave+1)+' de 3</span>Derribado';p.textContent=extra;k.textContent='';go.textContent='Reintentar el nivel '+level}
@@ -1458,6 +1460,7 @@ function endGame(win){state=win?'win':'dead';document.body.classList.remove('pla
 function setPlay(){state='play';document.body.classList.add('play');clock=performance.now()}
 function pause(){if(state!=='play')return;state='pause';document.body.classList.remove('play');overlay('pause');fireHeld=false;adsHeld=false;snd.suspend()}
 
+$('ql').textContent='Calidad: '+QNAME[QM]+' (cambiar)';$('ql').addEventListener('click',()=>{const n=QMODES[(QMODES.indexOf(QM)+1)%3];try{localStorage.setItem('muelle03.calidad',n)}catch(e){}const u=new URL(location.href);u.searchParams.set('calidad',n);location.replace(u)});
 $('nw').addEventListener('click',()=>{if(state!=='menu')return;level=1;saveLevel();$('go').click()});
 $('go').addEventListener('click',()=>{if(state==='load')return;snd.init();
   if(state==='menu'||state==='dead'||state==='win')resetGame();
@@ -1502,7 +1505,7 @@ function buildPost(){
   const rt=new T.WebGLRenderTarget(8,8,{type:T.HalfFloatType,format:T.RGBAFormat,minFilter:T.LinearFilter,magFilter:T.LinearFilter,depthBuffer:true,stencilBuffer:true});
   composer=new T.EffectComposer(renderer,rt);composer.addPass(new T.RenderPass(scene,camera));
   composer.addPass({enabled:true,needsSwap:false,clear:false,renderToScreen:false,setSize(){},render(r,wb,rb){r.setRenderTarget(rb);const ac=r.autoClear;r.autoClear=false;r.clearDepth();r.render(wScene,wCam);r.autoClear=ac}});
-  bloom=new T.UnrealBloomPass(new T.Vector2(256,256),.5,.6,1.35);composer.addPass(bloom);
+  if(!LITE){bloom=new T.UnrealBloomPass(new T.Vector2(256,256),.5,.6,1.35);composer.addPass(bloom)}
   finalPass=new T.ShaderPass({uniforms:{tDiffuse:{value:null},uRes:{value:new T.Vector2(1,1)},uTime:{value:0},uExp:{value:.95},uDmg:{value:0},uLow:{value:0}},
     vertexShader:'varying vec2 vUv;void main(){vUv=uv;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.);}',
     fragmentShader:(LOW?'':'#define CA\n')+`uniform sampler2D tDiffuse;uniform vec2 uRes;uniform float uTime,uExp,uDmg,uLow;varying vec2 vUv;
@@ -1565,7 +1568,7 @@ function frame(now){requestAnimationFrame(frame);
   if(composer){const u=finalPass.uniforms;u.uTime.value=time;u.uDmg.value=dmgFlash+(P.hp<35&&playing?.25+.12*Math.sin(time*6):0);u.uLow.value=playing?clamp(1-P.hp/45,0,1):0;composer.render(dt)}
   else{renderer.autoClear=true;renderer.render(scene,camera);renderer.autoClear=false;renderer.clearDepth();renderer.render(wScene,wCam);renderer.autoClear=true}
   // resolución dinámica
-  if(playing){fAcc+=dt;fN++;fT+=dt;if(fT>1.6&&time-t0>3){const avg=fAcc/fN;let nd=dpr;if(avg>.03)nd=Math.max(.6,dpr*.82);else if(avg>.024)nd=Math.max(.6,dpr*.92);else if(avg<.0145&&dpr<maxDpr)nd=Math.min(maxDpr,dpr*1.08);
+  if(playing){fAcc+=dt;fN++;fT+=dt;if(fT>1.6&&time-t0>3){const avg=fAcc/fN;let nd=dpr;if(avg>.03)nd=Math.max(minDpr,dpr*.82);else if(avg>.024)nd=Math.max(minDpr,dpr*.92);else if(avg<.0145&&dpr<maxDpr)nd=Math.min(maxDpr,dpr*1.08);
     if(Math.abs(nd-dpr)>.01){dpr=nd;resize()}fAcc=fN=fT=0}}
 }
 
