@@ -599,8 +599,10 @@ function veh(name,x,z,rot){const g=VEH[name],D=VDEF[name],c=Math.cos(rot),s=Math
   let x0=1e9,x1=-1e9,W=0;for(const k of D){addCol(x+k[0]*c,z-k[0]*s,k[1],k[2],0,k[3],rot);x0=Math.min(x0,k[0]-k[1]/2);x1=Math.max(x1,k[0]+k[1]/2);W=Math.max(W,k[2])}
   const mc=(x0+x1)/2;contactShadow(x+mc*c,z-mc*s,x1-x0,W,rot);
   const m=new T.Mesh(g.geo,g.mat);m.position.set(x,0,z);m.rotation.y=rot;m.castShadow=m.receiveShadow=true;m.userData.keep=true;world.add(m)}
-function loadVehicles(){if(!T.GLTFLoader)return;const names=Object.keys(VDEF).concat('barco');let left=names.length,got=0;const ld=new T.GLTFLoader();
-  const done=()=>{if(--left===0&&got&&state==='menu'){try{loadZone(level-1)}catch(e){console.warn(e)}}};
+let vehPending=false;
+function loadVehicles(){if(!T.GLTFLoader)return;const names=Object.keys(VDEF).concat('barco');let left=names.length,got=0;const ld=new T.GLTFLoader();vehPending=true;
+  const fresh=()=>{if(state==='menu'&&Z&&Object.keys(VEH).length>Z.vn){try{loadZone(level-1)}catch(e){console.warn(e)}}},fin=()=>{fresh();if(!vehPending)return;vehPending=false;if(state==='menu')overlay('menu')};setTimeout(fin,40000);
+  const done=()=>{if(--left===0)fin();else if(!vehPending)fresh();else if(vehPending&&state==='menu')$('go').textContent='Cargando modelos '+(names.length-left)+'/'+names.length+'…'};
   for(const n of names)ld.load(n+'.glb',g=>{let m=null;g.scene.traverse(o=>{if(o.isMesh&&!m)m=o});if(m){m.material.envMapIntensity=.9;if(m.material.map)m.material.map.anisotropy=Math.min(4,maxAniso);VEH[n]={geo:m.geometry,mat:m.material};got++}done()},undefined,done)}
 
 /* ================= zona 2: playa ferroviaria ================= */
@@ -839,7 +841,7 @@ function loadZone(lv){
   world.traverse(o=>{if(o.geometry&&!o.userData.keep)o.geometry.dispose()});while(world.children.length)world.remove(world.children[0]);
   cols.length=0;lamps.length=0;for(const s of lampPool)s.intensity=0;L.canopy.intensity=0;L.water=null;beacon=null;if(gate){scene.remove(gate.g);gate=null}
   if(FX.dec){for(const m of FX.dec)m.visible=false;for(const o of FX.sh){o.life=0;o.m.visible=false}for(const o of FX.deb){o.life=0;o.m.visible=false}}
-  Z=ZONES[lv%ZONES.length]();Z.lv=lv+1;
+  Z=ZONES[lv%ZONES.length]();Z.vn=Object.keys(VEH).length;Z.lv=lv+1;
   world.traverse(o=>{o.updateMatrix();o.matrixAutoUpdate=false});world.updateMatrixWorld(true);
   const u=rainMat.uniforms.uL.value;u[0].set(L.flood.position.x,L.flood.position.y,L.flood.position.z,9);for(let k=1;k<7;k++){const l=lamps[k-1];if(l&&l.base)u[k].set(l.pos.x,l.pos.y-1.5,l.pos.z,5);else u[k].set(0,-99,0,0)}
   bakeEnv()}
@@ -1426,7 +1428,7 @@ const waveSize=i=>Math.min(8,[3,4,6][i]+level-1);
 function saveLevel(){try{localStorage.setItem('muelle03.nivel',String(level))}catch(e){}}
 function savedLevel(){try{const v=parseInt(localStorage.getItem('muelle03.nivel'),10);return v>=1&&v<=LEVELS?v:1}catch(e){return 1}}
 function banner(a,b,dur){const m=$('msg');m.innerHTML=a+(b?'<small>'+b+'</small>':'');m.classList.add('on');msgT=time+(dur||2.6)}
-function startWave(i){wave=i;waveQ=level>=2&&i===1;toSpawn=waveQ?Math.max(2,Math.round(waveSize(i)*.6)):waveSize(i);spawnT=time+2.2;betweenT=0;
+function startWave(i){if(i>0&&Object.keys(VEH).length>Z.vn){try{loadZone(level-1)}catch(e){console.warn(e)}}wave=i;waveQ=level>=2&&i===1;toSpawn=waveQ?Math.max(2,Math.round(waveSize(i)*.6)):waveSize(i);spawnT=time+2.2;betweenT=0;
   if(i===0)banner('Nivel '+level+': '+Z.name,'Oleada 1 de 3 · '+toSpawn+' hostiles',3.6);else banner('Oleada '+(i+1)+' de 3',toSpawn+(waveQ?' drones cuadrúpedos entrando':' hostiles entrando'));hud.obj()}
 function openExit(){phase='exit';betweenT=0;gate.open=true;const k=cols.indexOf(gate.col);if(k>=0)cols.splice(k,1);snd.gate();banner('Zona despejada','Cruza el portón hacia la siguiente zona',6);hud.obj()}
 function nextLevel(){if(phase==='load')return;phase='load';$('fade').classList.add('on');
@@ -1452,7 +1454,7 @@ function resetLevel(){P.pos.set(Z.start[0],0,Z.start[1]);P.cy=0;P.vel.set(0,0,0)
 function overlay(kind,extra){const tt=$('ovT'),p=$('ovP'),k=$('ovK'),go=$('go');go.disabled=false;
   const ctl=isTouch?'Pulgar izquierdo para moverte, derecho para mirar. Mejor en horizontal.':'WASD para moverte, ratón para apuntar, clic para disparar, clic derecho para la mira, R recarga, Q cambia de arma, Espacio salta, Mayús corre, F pantalla completa.';
   $('nw').hidden=!(kind==='menu'&&level>1);$('ql').hidden=kind!=='menu';$('ovC').hidden=kind!=='menu';
-  if(kind==='menu'){k.textContent=ctl;go.textContent=level>1?'Continuar en el nivel '+level:'Entrar al muelle'}
+  if(kind==='menu'){k.textContent=ctl;go.textContent=level>1?'Continuar en el nivel '+level:'Entrar al muelle';if(vehPending){go.disabled=true;go.textContent='Cargando modelos…'}}
   else if(kind==='pause'){tt.innerHTML='<span>Muelle 03</span>En pausa';p.textContent='El equipo de asalto espera. La lluvia no.';k.textContent=ctl;go.textContent='Seguir'}
   else if(kind==='dead'){tt.innerHTML='<span>Nivel '+level+' · oleada '+(wave+1)+' de 3</span>Derribado';p.textContent=extra;k.textContent='';go.textContent='Reintentar el nivel '+level}
   else{tt.innerHTML='<span>Diez niveles superados</span>Puerto despejado';p.textContent=extra;k.textContent='';go.textContent='Jugar otra vez desde el nivel 1'}}
@@ -1462,7 +1464,7 @@ function setPlay(){state='play';document.body.classList.add('play');clock=perfor
 function pause(){if(state!=='play')return;state='pause';document.body.classList.remove('play');overlay('pause');fireHeld=false;adsHeld=false;snd.suspend()}
 
 $('ql').textContent='Calidad: '+QNAME[QM]+' (cambiar)';$('ql').addEventListener('click',()=>{const n=QMODES[(QMODES.indexOf(QM)+1)%3];try{localStorage.setItem('muelle03.calidad',n)}catch(e){}const u=new URL(location.href);u.searchParams.set('calidad',n);location.replace(u)});
-$('nw').addEventListener('click',()=>{if(state!=='menu')return;level=1;saveLevel();$('go').click()});
+$('nw').addEventListener('click',()=>{if(state!=='menu'||vehPending)return;level=1;saveLevel();$('go').click()});
 $('go').addEventListener('click',()=>{if(state==='load')return;snd.init();
   if(state==='menu'||state==='dead'||state==='win')resetGame();
   if(isTouch||noPL){setPlay();return}
