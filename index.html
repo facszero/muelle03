@@ -1421,8 +1421,8 @@ function updateBoss(dt){updateRockets(dt);const d=boss;if(!d||d.st==='off')retur
   return 1}
 
 /* ================= oleadas y HUD ================= */
-const LEVELS=10,MAXA=6;let level=1,phase='waves',waveQ=false,wave=0,toSpawn=0,spawnT=0,betweenT=0,aliveN=0,t0=0,msgT=0;
-const waveSize=i=>Math.min(6,[3,4,6][i]+level-1);
+const LEVELS=10,MAXA=4;let level=1,phase='waves',waveQ=false,wave=0,toSpawn=0,spawnT=0,betweenT=0,aliveN=0,t0=0,msgT=0;
+const waveSize=i=>Math.min(8,[3,4,6][i]+level-1);
 function saveLevel(){try{localStorage.setItem('muelle03.nivel',String(level))}catch(e){}}
 function savedLevel(){try{const v=parseInt(localStorage.getItem('muelle03.nivel'),10);return v>=1&&v<=LEVELS?v:1}catch(e){return 1}}
 function banner(a,b,dur){const m=$('msg');m.innerHTML=a+(b?'<small>'+b+'</small>':'');m.classList.add('on');msgT=time+(dur||2.6)}
