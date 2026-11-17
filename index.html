@@ -57,10 +57,10 @@ body.touch.play #touch{display:block}
   display:flex;align-items:center;justify-content:center;font:600 14px 'Saira Condensed',sans-serif}
 .tb.on{background:rgba(219,238,255,.3)}
 #bF{width:86px;height:86px;right:max(26px,env(safe-area-inset-right,0px));bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 84px);border-color:var(--sodium);color:var(--sodium)}
-#bG{width:56px;height:56px;font-size:11px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 106px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 6px)}
-#bJ{width:58px;height:58px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 104px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 70px)}
+#bG{width:56px;height:56px;font-size:11px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 106px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 40px)}
+#bJ{width:58px;height:58px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 104px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 100px)}
 #bW{width:58px;height:58px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 14px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 182px)}
-#bR{width:58px;height:58px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 88px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 160px)}
+#bR{width:58px;height:58px;right:calc(max(26px,env(safe-area-inset-right,0px)) + 92px);bottom:calc(max(16px,env(safe-area-inset-bottom,0px)) + 164px)}
 #bP{width:42px;height:42px;right:max(16px,env(safe-area-inset-right,0px));top:max(12px,env(safe-area-inset-top,0px))}
 #bS{width:42px;height:42px;right:calc(max(16px,env(safe-area-inset-right,0px)) + 54px);top:max(12px,env(safe-area-inset-top,0px));font-size:19px}
 /* portada / pausa */
@@ -1344,19 +1344,24 @@ function updateQuads(dt){let alive=0;const px=P.pos.x,pz=P.pos.z;
   snd.hum(alive*1.6);return alive}
 
 /* ================= granadas ================= */
-const GREN=[],GMAX=3;
+const GREN=[],GFX=[],GMAX=3;
 function buildGrenades(){const m=new T.MeshStandardMaterial({color:0x2a3324,roughness:.6,metalness:.3}),g=new T.SphereGeometry(.075,12,10);g.scale(1,1.25,1);
-  for(let i=0;i<GMAX;i++){const o=new T.Mesh(g,m);o.castShadow=true;o.visible=false;scene.add(o);const lm=new T.MeshBasicMaterial({color:new T.Color(6,.4,.2),fog:false}),l=new T.Mesh(new T.SphereGeometry(.028,8,6),lm);l.position.y=.1;o.add(l);GREN.push({m:o,l,v:new V3(),on:false,t:0})}}
+  for(let i=0;i<GMAX;i++){const o=new T.Mesh(g,m);o.castShadow=true;o.visible=false;scene.add(o);const lm=new T.MeshBasicMaterial({color:new T.Color(6,.4,.2),fog:false}),l=new T.Mesh(new T.SphereGeometry(.028,8,6),lm);l.position.y=.1;o.add(l);GREN.push({m:o,l,v:new V3(),on:false,t:0})}
+  const fg=new T.SphereGeometry(1,18,12),rg=new T.RingGeometry(.86,1,48);rg.rotateX(-Math.PI/2);
+  for(let i=0;i<GMAX;i++){const f=new T.Mesh(fg,new T.MeshBasicMaterial({color:new T.Color(9,4.6,1.5),transparent:true,blending:T.AdditiveBlending,depthWrite:false,fog:false}));f.visible=false;scene.add(f);
+    const r=new T.Mesh(rg,new T.MeshBasicMaterial({color:new T.Color(5,2.6,1),transparent:true,blending:T.AdditiveBlending,depthWrite:false,fog:false,side:T.DoubleSide}));r.visible=false;r.renderOrder=3;scene.add(r);GFX.push({f,r,t:9})}}
 function hudGren(){const e=$('grN');if(e)e.textContent='Granadas '+'●'.repeat(W.gren)+'○'.repeat(GMAX-W.gren);const b=$('bG');if(b)b.style.opacity=W.gren>0?'':'.35'}
 function throwGrenade(){if(state!=='play'||!(W.gren>0)||time<(W.gNext||0))return;const g=GREN.find(g=>!g.on);if(!g)return;W.gren--;W.gNext=time+.8;hudGren();
-  camera.getWorldDirection(_dir);g.m.position.copy(camera.position).addScaledVector(_dir,.45);g.m.position.y-=.12;g.v.copy(_dir).multiplyScalar(15);g.v.y+=4.2;g.v.x+=P.vel.x*.5;g.v.z+=P.vel.z*.5;
-  if(inSolid(g.m.position.x,g.m.position.y,g.m.position.z))g.m.position.copy(camera.position);g.on=true;g.t=2.3;g.m.visible=true;W.kick=Math.min(.09,W.kick+.06);snd.step()}
-function grenadeBlast(p){const R0=5.5,bx=p.x,by=Math.max(p.y,.1)+.25,bz=p.z,hits=[];_a.set(bx,by,bz);explode(_a);decal(bx,Math.max(0,p.y-.07),bz,0,1,0,1.1);
+  camera.getWorldDirection(_dir);g.m.position.copy(camera.position).addScaledVector(_dir,.45);g.m.position.y-=.12;g.v.copy(_dir).multiplyScalar(12.5);g.v.y+=4;g.v.x+=P.vel.x*.5;g.v.z+=P.vel.z*.5;
+  if(inSolid(g.m.position.x,g.m.position.y,g.m.position.z))g.m.position.copy(camera.position);g.on=true;g.t=2;g.m.visible=true;W.kick=Math.min(.09,W.kick+.06);snd.step()}
+function grenadeBlast(p){const R0=5.5,bx=p.x,by=Math.max(p.y,.1)+.25,bz=p.z,hits=[];_a.set(bx,by,bz);explode(_a);L.boom.intensity=3200;burst(bx,by,bz,0,1,0,LOW?24:40,13,8,4.2,1.3);for(let i=0;i<7;i++)smoke(bx+RR(-1,1),by+RR(0,.8),bz+RR(-1,1),RR(-1.4,1.4),RR(.8,2.2),RR(-1.4,1.4),RR(1.8,3),RR(1.4,2.4),1.6,.55);
+  shake=Math.max(shake,clamp(1.3-Math.hypot(bx-P.pos.x,bz-P.pos.z)*.04,.15,.9));{const e=GFX.find(e=>e.t>.6)||GFX[0];e.t=0;e.f.position.set(bx,by+.3,bz);e.r.position.set(bx,Math.max(.05,p.y-.02),bz);e.f.visible=e.r.visible=true}decal(bx,Math.max(0,p.y-.07),bz,0,1,0,1.1);
   for(const d of foes){if(!d.alive)continue;const cy=d.pos.y+(d.b?1.6:1),dx=d.pos.x-bx,dy=cy-by,dz=d.pos.z-bz,l=Math.hypot(dx,dy,dz);if(l>R0+(d.b?1:0))continue;
     let k=clamp(1.15-l/R0,0,1);if(l>.6&&rayCols(bx,by,bz,dx/l,dy/l,dz/l,l-.4).hit)k*=.25;if(k>0)hits.push([d,260*k*(d.b?4:1)])}
   for(const h of hits)if(h[0].alive)damageDrone(h[0],h[1],false);
   if(state==='play'){const l=Math.hypot(P.pos.x-bx,P.pos.y+.9-by,P.pos.z-bz);if(l<5){let k=clamp(1.1-l/5,0,1);if(l>.6&&rayCols(bx,by,bz,(P.pos.x-bx)/l,(P.pos.y+.9-by)/l,(P.pos.z-bz)/l,l-.4).hit)k*=.25;if(k>.02){_b.set(bx,by,bz);hurt(70*k,_b)}}}}
-function updateGrenades(dt){for(const g of GREN){if(!g.on)continue;const p=g.m.position,v=g.v;g.t-=dt;
+function updateGrenades(dt){for(const e of GFX){if(e.t>.6){if(e.f.visible)e.f.visible=e.r.visible=false;continue}e.t+=dt;const a=Math.min(1,e.t/.28),b=Math.min(1,e.t/.5);e.f.scale.setScalar(.5+2.9*(1-(1-a)*(1-a)));e.f.material.opacity=Math.max(0,1-a*a);e.f.visible=a<1;const rr=.6+5*(1-(1-b)*(1-b));e.r.scale.set(rr,1,rr);e.r.material.opacity=.9*(1-b)}
+  for(const g of GREN){if(!g.on)continue;const p=g.m.position,v=g.v;g.t-=dt;
     for(let s=0;s<3;s++){const h=dt/3;v.y-=15*h;
       p.x+=v.x*h;if(inSolid(p.x,p.y,p.z)){p.x-=v.x*h;v.x*=-.38;v.z*=.8}
       p.z+=v.z*h;if(inSolid(p.x,p.y,p.z)){p.z-=v.z*h;v.z*=-.38;v.x*=.8}
@@ -1471,7 +1476,7 @@ const hud={
   xh(){$('xh').style.setProperty('--g',(5+(W.spread+(1-W.ads)*.004)*900+Math.hypot(P.vel.x,P.vel.z)*1.2)+'px')}};
 function resetGame(){if(state==='win'){level=1;saveLevel()}if(!Z||Z.lv!==level||(gate&&gate.open))loadZone(level-1);resetLevel()}
 function resetLevel(){P.pos.set(Z.start[0],0,Z.start[1]);P.cy=0;P.vel.set(0,0,0);P.yaw=Z.start[2];P.pitch=0;P.hp=100;P.lastHit=-99;P.pp=P.py=0;P.ground=true;
-  W.am=[30,8];W.gren=GMAX;W.gNext=0;for(const g of GREN){g.on=false;g.m.visible=false}hudGren();W.ammo=W.am[W.w];W.reloading=false;W.swT=0;W.pumpT=0;W.shots=W.hits=W.kills=0;W.spread=0;$('rl').style.opacity=0;
+  W.am=[30,8];W.gren=GMAX;W.gNext=0;for(const g of GREN){g.on=false;g.m.visible=false}for(const e of GFX){e.t=9;e.f.visible=e.r.visible=false}hudGren();W.ammo=W.am[W.w];W.reloading=false;W.swT=0;W.pumpT=0;W.shots=W.hits=W.kills=0;W.spread=0;$('rl').style.opacity=0;
   for(const d of foes){d.alive=false;d.st='off';d.g.visible=false}bossClear();snd.hum(0);for(const b of FX.bolts){b.on=false;b.g.visible=false}
   phase='waves';t0=time;drawAmmo();hud.hp();hud.ammo();startWave(0)}
 function overlay(kind,extra){const tt=$('ovT'),p=$('ovP'),k=$('ovK'),go=$('go');go.disabled=false;
