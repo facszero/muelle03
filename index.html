@@ -83,7 +83,8 @@ body.play #ov{opacity:0;pointer-events:none}
   color:#0b0d10;background:var(--sodium);transform:skewX(-10deg)}
 #go:disabled{background:rgba(219,238,255,.25);color:rgba(219,238,255,.7);cursor:default}
 #go:focus-visible{outline:2px solid var(--ice);outline-offset:3px}
-@media (max-height:480px){#ov h1{font-size:64px}#ov p{font-size:15px;margin-top:8px}#acts{margin-top:12px}}
+@media (max-height:540px){#ov{padding-top:10px;padding-bottom:max(14px,env(safe-area-inset-bottom,0px))}#ov h1{font-size:46px}#ov p{font-size:14px;margin-top:6px;max-width:70ch}#ov p.k{font-size:13px}#acts{margin-top:10px;gap:6px 18px}#go{padding:9px 24px 8px;font-size:19px}#fs{padding:7px 16px 6px;font-size:16px}#nw,#ql{padding:7px 4px 6px;font-size:16px}#ovC{margin-top:6px;font-size:13px}}
+@media (max-height:360px){#ov h1{font-size:38px}#ov p.k{display:none}}
 </style>
 </head>
 <body>
