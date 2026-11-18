@@ -14,3 +14,5 @@ Publicarlo con GitHub Pages o servir la carpeta con cualquier servidor web (`ind
 - Móvil: pulgar izquierdo para moverse, derecho para mirar, botones de fuego, salto y recarga. Mejor en horizontal.
 
 Necesita conexión a internet la primera vez: carga three.js desde cdnjs y jsDelivr.
+
+Los drones cuadrúpedos usan `cuadrupedo.glb` (modelo con esqueleto; el paso se anima por código).

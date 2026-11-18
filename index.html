@@ -1273,8 +1273,8 @@ let dmgFlash=0;
 /* ================= drones cuadrúpedos ================= */
 const quads=[],foes=[];let SBM=null;
 const QHS=[[0,1.4,.34,.3,0],[0,1.05,.3,.44,1],[0,1.05,-.3,.44,1],[0,.45,0,.5,3]];
-function hitQuad(d,o,dir,maxT){let best=maxT;const p=d.pos,s=Math.sin(d.g.rotation.y),c=Math.cos(d.g.rotation.y),by=p.y+d.bd.position.y;
-  for(let i=0;i<4;i++){const h=QHS[i],r=h[3],ax=p.x+h[2]*s-o.x,ay=by+h[1]-o.y,az=p.z+h[2]*c-o.z,b=ax*dir.x+ay*dir.y+az*dir.z,cc=ax*ax+ay*ay+az*az-b*b;
+function hitQuad(d,o,dir,maxT){let best=maxT;const p=d.pos,s=Math.sin(d.g.rotation.y),c=Math.cos(d.g.rotation.y),by=p.y+d.bd.position.y,HS=d.rig?QHS2:QHS;
+  for(let i=0;i<HS.length;i++){const h=HS[i],r=h[3],ax=p.x+h[0]*c+h[2]*s-o.x,ay=by+h[1]-o.y,az=p.z-h[0]*s+h[2]*c-o.z,b=ax*dir.x+ay*dir.y+az*dir.z,cc=ax*ax+ay*ay+az*az-b*b;
     if(b>0&&cc<r*r){const t=b-Math.sqrt(r*r-cc);if(t<best){best=t;HZ=h[4]}}}
   return best}
 const hitFoe=(d,o,dir,maxT)=>d.b?hitBoss(d,o,dir,maxT):d.q?hitQuad(d,o,dir,maxT):hitSoldier(d,o,dir,maxT);
@@ -1299,25 +1299,46 @@ function buildQuads(){
   const flM=new T.SpriteMaterial({map:new T.CanvasTexture(gc),color:new T.Color(10,6,2.4),transparent:true,blending:T.AdditiveBlending,depthWrite:false,fog:false});
   const b0=FX.bolts[0].g.children;SBM=[b0[0].material,b0[1].material];
   for(let i=0;i<4;i++){const g=new T.Group(),bd=new T.Group();g.add(bd);const mk=(geo,m,par)=>{const o=new T.Mesh(geo,m);o.castShadow=m===mat;o.receiveShadow=m===mat;par.add(o);return o};
-    mk(gB,mat,bd);mk(gU,uvM,bd);const eyeM=new T.MeshBasicMaterial({color:new T.Color(3,.3,.15),fog:false}),eye=new T.Mesh(new T.BoxGeometry(.24,.055,.02),eyeM);eye.position.set(0,1.35,.636);bd.add(eye);
+    const old=[mk(gB,mat,bd),mk(gU,uvM,bd)];const eyeM=new T.MeshBasicMaterial({color:new T.Color(3,.3,.15),fog:false}),eye=new T.Mesh(new T.BoxGeometry(.24,.055,.02),eyeM);eye.position.set(0,1.35,.636);bd.add(eye);
     const fl=new T.Sprite(flM);fl.position.set(0,1.52,.56);fl.visible=false;bd.add(fl);
-    const legs=[];for(let k=0;k<4;k++){const hip=new T.Group();hip.position.set(AP[k][0]*.3,.95,AP[k][1]*.4);bd.add(hip);mk(gUp[k],mat,hip);const kn=new T.Group();kn.position.copy(KP[k]);hip.add(kn);mk(gLo[k],mat,kn);mk(gSh[k],uvM,kn);legs.push({hip,kn,sx:AP[k][0],o:AP[k][0]*AP[k][1]>0?0:Math.PI})}
+    const legs=[];for(let k=0;k<4;k++){const hip=new T.Group();hip.position.set(AP[k][0]*.3,.95,AP[k][1]*.4);bd.add(hip);old.push(hip);mk(gUp[k],mat,hip);const kn=new T.Group();kn.position.copy(KP[k]);hip.add(kn);mk(gLo[k],mat,kn);mk(gSh[k],uvM,kn);legs.push({hip,kn,sx:AP[k][0],o:AP[k][0]*AP[k][1]>0?0:Math.PI})}
     g.visible=false;scene.add(g);
-    const q={q:true,g,bd,legs,eyeM,fl,pos:g.position,vel:new V3(),tgt:new V3(),vy:0,hp:0,alive:false,st:'off',stT:0,fireT:0,burst:0,burstT:0,hitT:0,ph:R()*6,flT:0,los:false,losT:0,noLos:0,chkT:0,lx:0,lz:0,dt:0,smT:0,side:1};quads.push(q)}
+    const q={q:true,g,bd,legs,eyeM,eye,old,fl,pos:g.position,vel:new V3(),tgt:new V3(),vy:0,hp:0,alive:false,st:'off',stT:0,fireT:0,burst:0,burstT:0,hitT:0,ph:R()*6,flT:0,los:false,losT:0,noLos:0,chkT:0,lx:0,lz:0,dt:0,smT:0,side:1};quads.push(q)}
   foes.push(...drones,...quads)}
+/* modelo del cuadrúpedo (Shadow Hound): esqueleto de 20 huesos, paso por código */
+const QS_=1.1/1.7,QLEG=[['007','006','004',0],['011','010','008',Math.PI],['015','014','012',0],['019','018','016',Math.PI]];
+const QHS2=[[0,.61,.95,.13,0],[0,.6,.38,.46,1],[0,.6,-.38,.46,1],[0,.98,0,.3,1],[.55,.32,.62,.26,3],[-.55,.32,.62,.26,3],[.55,.32,-.62,.26,3],[-.55,.32,-.62,.26,3]];
+let QM_OK=false;
+function loadQuadModel(){if(!T.GLTFLoader||!T.SkeletonUtils)return;
+  new T.GLTFLoader().load('cuadrupedo.glb',g=>{try{g.scene.traverse(o=>{if(o.isSkinnedMesh){o.castShadow=o.receiveShadow=true;o.frustumCulled=false;const m=o.material;m.envMapIntensity=1.2;m.color.setRGB(1.8,1.8,1.9);for(const t of[m.map,m.normalMap,m.roughnessMap])if(t)t.anisotropy=Math.min(4,maxAniso)}});
+    const uvM=new T.MeshBasicMaterial({color:new T.Color(1.5,.42,3.4),fog:false}),sg=new T.BoxGeometry(.025,.045,.7),dg=new T.SphereGeometry(.04,8,6);
+    for(const d of quads){const root=T.SkeletonUtils.clone(g.scene);root.scale.setScalar(QS_);d.bd.add(root);let sk=null;root.traverse(o=>{if(o.isSkinnedMesh)sk=o.skeleton});
+      const Bn=n=>sk.bones.find(b=>b.name==='Bone_'+n);root.updateMatrixWorld(true);const iq=new T.Quaternion();root.getWorldQuaternion(iq);iq.invert();
+      d.rig=QLEG.map(L=>{const hip=Bn(L[0]),foot=Bn(L[2]),wq=new T.Quaternion();hip.getWorldQuaternion(wq);wq.premultiply(iq);const inv=wq.clone().invert();
+        const hp=new V3(),kp=new V3();hip.getWorldPosition(hp);Bn(L[1]).getWorldPosition(kp);const dir=kp.sub(hp).setY(0).normalize(),lax=new V3().crossVectors(dir,new V3(0,1,0)).normalize();
+        const r={b:hip,rest:hip.quaternion.clone(),ay:new V3(0,1,0).applyQuaternion(inv),al:lax.applyQuaternion(inv),o:L[3],sy:1,sl:1,q:new T.Quaternion(),q2:new T.Quaternion()};
+        const f0=new V3(),f1=new V3(),z0=new V3(),z1=new V3();foot.getWorldPosition(f0);r.q.setFromAxisAngle(r.al,.3);hip.quaternion.copy(r.rest).multiply(r.q);root.updateMatrixWorld(true);foot.getWorldPosition(f1);if(f1.y<f0.y)r.sl=-1;
+        hip.quaternion.copy(r.rest);root.updateMatrixWorld(true);foot.getWorldPosition(z0);root.worldToLocal(z0);r.q.setFromAxisAngle(r.ay,.3);hip.quaternion.copy(r.rest).multiply(r.q);root.updateMatrixWorld(true);foot.getWorldPosition(z1);root.worldToLocal(z1);if(z1.z<z0.z)r.sy=-1;
+        hip.quaternion.copy(r.rest);root.updateMatrixWorld(true);return r});
+      for(const o of d.old)o.visible=false;
+      d.eye.geometry=new T.BoxGeometry(.3,.045,.02);d.eye.position.set(0,.6,1.0);d.fl.position.set(.05,1.0,1.0);
+      for(const sx of[-1,1]){const st=new T.Mesh(sg,uvM);st.position.set(sx*.45,.62,-.05);d.bd.add(st);const dt=new T.Mesh(dg,uvM);dt.position.set(sx*.3,.64,.86);d.bd.add(dt)}}
+    QM_OK=true}catch(e){console.warn('modelo del cuadrúpedo',e)}},undefined,()=>{})}
+function quadLegs(d,mv,dr,dead){if(!d.rig)return false;for(const r of d.rig){const a=d.ph+r.o;const sw=dead?0:Math.sin(a)*.2*mv,lf=dead?-.42*dead:(Math.max(0,Math.cos(a))*.26*mv-dr*.18);
+    r.q.setFromAxisAngle(r.ay,sw*r.sy);r.q2.setFromAxisAngle(r.al,lf*r.sl);r.b.quaternion.copy(r.rest).multiply(r.q).multiply(r.q2)}return true}
 function spawnQuad(){let d=quads.find(d=>d.st==='off');if(!d){for(const e of quads)if(e.st==='dead'&&(!d||e.dt>d.dt))d=e}if(!d)return false;
   const S=Z.spawns,dsp=s=>Math.hypot(s[0]-P.pos.x,s[1]-P.pos.z);let far=S.filter(s=>dsp(s)>14&&dsp(s)<46);if(!far.length)far=S.filter(s=>dsp(s)>9);const s=(far.length?far:S)[(R()*(far.length||S.length))|0];
   d.pos.set(s[0],s[2],s[1]);d.vel.set(0,0,0);d.vy=1;d.hp=220;d.alive=true;d.st='drop';d.fireT=time+RR(1.4,2.4);d.burst=0;d.hitT=0;d.flT=0;d.dt=0;
-  d.g.rotation.set(0,Math.atan2(P.pos.x-s[0],P.pos.z-s[1]),0);d.bd.position.y=0;d.bd.rotation.set(0,0,0);for(const l of d.legs){l.hip.rotation.set(0,0,0)}d.g.visible=true;return true}
+  d.g.rotation.set(0,Math.atan2(P.pos.x-s[0],P.pos.z-s[1]),0);d.bd.position.y=0;d.bd.rotation.set(0,0,0);for(const l of d.legs){l.hip.rotation.set(0,0,0)}quadLegs(d,0,1,0);d.g.visible=true;return true}
 function killQuad(d){d.alive=false;d.st='dead';d.dt=0;d.fl.visible=false;d.eyeM.color.setRGB(.05,.01,.01);_a.set(d.pos.x,d.pos.y+1,d.pos.z);explode(_a);W.kills++;hud.hit(true);snd.tick(true);hud.obj()}
 function fireQuadBolt(d){const b=FX.bolts.find(b=>!b.on);if(!b)return;const p=d.pos,s=Math.sin(d.g.rotation.y),c=Math.cos(d.g.rotation.y);d.side=-d.side;const lx=d.side*.055;
-  _a.set(p.x+lx*c+.56*s,p.y+d.bd.position.y+1.52,p.z-lx*s+.56*c);
+  if(d.rig)_a.set(p.x+.05*c+1.0*s,p.y+d.bd.position.y+1.0,p.z-.05*s+1.0*c);else _a.set(p.x+lx*c+.56*s,p.y+d.bd.position.y+1.52,p.z-lx*s+.56*c);
   const dist=_a.distanceTo(P.pos),t=dist/BOLT_V;_b.set(P.pos.x+P.vel.x*t*.5,P.pos.y+1.15,P.pos.z+P.vel.z*t*.5).sub(_a).normalize();
   _b.x+=RR(-.06,.06);_b.y+=RR(-.04,.04);_b.z+=RR(-.06,.06);_b.normalize();b.g.position.copy(_a);b.v.copy(_b).multiplyScalar(BOLT_V);_c.copy(_a).add(_b);b.g.lookAt(_c);b.life=1.6;b.on=true;b.g.visible=true;
   b.dmg=5+(level-1)*.35;b.g.children[0].material=SBM[0];b.g.children[1].material=SBM[1];d.flT=.05;const fs=RR(.4,.6);d.fl.scale.set(fs,fs,1);snd.eshot(1/(1+dist*.06))}
 function updateQuads(dt){let alive=0;const px=P.pos.x,pz=P.pos.z;
   for(const d of quads){if(d.st==='off')continue;const p=d.pos;
-    if(d.st==='dead'){d.dt+=dt;const k=Math.min(1,d.dt/.45),e=k*k;d.bd.position.y=-.6*e;d.bd.rotation.z=.16*e;d.bd.rotation.x=-.08*e;for(const l of d.legs){l.hip.rotation.x=0;l.hip.rotation.z=l.sx*.8*e}
+    if(d.st==='dead'){d.dt+=dt;const k=Math.min(1,d.dt/.45),e=k*k;d.bd.position.y=(d.rig?-.24:-.6)*e;d.bd.rotation.z=(d.rig?.1:.16)*e;d.bd.rotation.x=-.08*e;if(!quadLegs(d,0,0,e))for(const l of d.legs){l.hip.rotation.x=0;l.hip.rotation.z=l.sx*.8*e}
       d.smT-=dt;if(d.smT<=0&&d.dt<6){d.smT=.3;smoke(p.x+RR(-.2,.2),p.y+.6,p.z+RR(-.2,.2),RR(-.2,.2),RR(.5,1),RR(-.2,.2),RR(1.2,2),RR(.4,.7),.8,.3)}
       if(d.dt>9){d.st='off';d.g.visible=false}continue}
     alive++;let vx=0,vz=0;
@@ -1330,15 +1351,15 @@ function updateQuads(dt){let alive=0;const px=P.pos.x,pz=P.pos.z;
       if(d.st==='hold'&&d.los&&time>d.fireT&&d.burst===0){d.burst=4;d.burstT=time}
       if(d.burst>0&&time>=d.burstT){fireQuadBolt(d);d.burst--;d.burstT=time+.11;if(d.burst===0)d.fireT=time+RR(1.7,2.8)-Math.min(.7,(level-1)*.06)}}
     const acc=Math.min(1,dt*7);d.vel.x+=(vx-d.vel.x)*acc;d.vel.z+=(vz-d.vel.z)*acc;d.vy-=17*dt;p.x+=d.vel.x*dt;p.z+=d.vel.z*dt;p.y+=d.vy*dt;
-    for(const e of foes){if(e===d||!e.alive)continue;const ex=p.x-e.pos.x,ez=p.z-e.pos.z,q=Math.hypot(ex,ez),m=e.q?1.5:1.1;if(q<m&&q>.01){p.x+=ex/q*(m-q)*.5;p.z+=ez/q*(m-q)*.5}}
+    for(const e of foes){if(e===d||!e.alive)continue;const ex=p.x-e.pos.x,ez=p.z-e.pos.z,q=Math.hypot(ex,ez),m=e.q?(d.rig?2:1.5):1.1;if(q<m&&q>.01){p.x+=ex/q*(m-q)*.5;p.z+=ez/q*(m-q)*.5}}
     {const ex=p.x-px,ez=p.z-pz,q=Math.hypot(ex,ez);if(q<1.3&&q>.01){p.x+=ex/q*(1.3-q);p.z+=ez/q*(1.3-q)}}
-    collide(p,.5,p.y,p.y+1.5);const g=groundAt(p.x,p.z,p.y);
+    collide(p,d.rig?.62:.5,p.y,p.y+(d.rig?1.1:1.5));const g=groundAt(p.x,p.z,p.y);
     if(p.y<=g){p.y=g;d.vy=0;if(d.st==='drop'){d.st='move';pickDest(d);d.stT=time+6;d.chkT=time+.9;d.lx=p.x;d.lz=p.z;burst(p.x,p.y+.05,p.z,0,.5,0,8,3,.5,.45,.4);snd.fall(1.4/(1+Math.hypot(p.x-px,p.z-pz)*.08))}}
     const sp=Math.hypot(d.vel.x,d.vel.z),mv=Math.min(1,sp/4.4),tx=px-p.x,tz=pz-p.z;
     let dy=Math.atan2(tx,tz)-d.g.rotation.y;dy=Math.atan2(Math.sin(dy),Math.cos(dy));d.g.rotation.y+=dy*Math.min(1,dt*5);
     d.ph+=(sp*2.6+.0)*dt;d.hitT=Math.max(0,d.hitT-dt);const dr=d.st==='drop'?1:0;
     d.bd.position.y=Math.sin(d.ph*2)*.018*mv+Math.sin(time*2.2+d.ph)*.008-d.hitT*.25;d.bd.rotation.z=Math.sin(d.ph)*.03*mv;d.bd.rotation.x=d.hitT*.5;
-    for(const l of d.legs){const a=d.ph+l.o;l.hip.rotation.x=Math.sin(a)*.3*mv;l.hip.rotation.z=l.sx*(Math.max(0,Math.cos(a))*.24*mv+dr*.35)}
+    if(!quadLegs(d,mv,dr,0))for(const l of d.legs){const a=d.ph+l.o;l.hip.rotation.x=Math.sin(a)*.3*mv;l.hip.rotation.z=l.sx*(Math.max(0,Math.cos(a))*.24*mv+dr*.35)}
     const ch=d.burst>0?1:d.st==='hold'?clamp(1-(d.fireT-time)/.6,0,1):0,kk=d.hitT>0?14:2.4+ch*ch*13;d.eyeM.color.setRGB(kk,kk*(.1+ch*.1),kk*.05);
     d.flT-=dt;d.fl.visible=d.flT>0}
   snd.hum(alive*1.6);return alive}
@@ -1605,12 +1626,12 @@ function frame(now){requestAnimationFrame(frame);
 
 /* ================= arranque ================= */
 function boot(){
-  try{buildWorld();buildFx();buildGun();buildDrones();buildQuads();buildGrenades();buildBoss();loadSoldierModel();loadBossModel();loadVehicles();buildPost();resize();
+  try{buildWorld();buildFx();buildGun();buildDrones();buildQuads();loadQuadModel();buildGrenades();buildBoss();loadSoldierModel();loadBossModel();loadVehicles();buildPost();resize();
     level=QS.has('nivel')?clamp(parseInt(QS.get('nivel'),10)||1,1,LEVELS):savedLevel();loadZone(level-1);P.pos.set(Z.start[0],0,Z.start[1]);P.yaw=Z.start[2];
     camera.position.set(P.pos.x,1.66,P.pos.z);camera.rotation.set(0,P.yaw,0);camera.updateMatrixWorld();
     renderer.compile(scene,camera);renderer.compile(wScene,wCam);
     hud.hp();hud.ammo();state='menu';overlay('menu');clock=performance.now();requestAnimationFrame(frame);
-    window.__game={throwGrenade,GREN,bdmg:(n,w)=>damageDrone(boss,n,w),boss:()=>boss,spawnBoss,rockets,wave:()=>wave,veh:()=>Object.keys(VEH).length,zone:()=>Z,sw:switchWeapon,keys,die(){hurt(999,P.pos)},lvl:()=>level,phase:()=>phase,gate:()=>gate,quads,spawnQuad,wipe(){for(const d of foes)if(d.alive){d.alive=false;d.st='off';d.g.visible=false}toSpawn=0},sm:()=>!!SM,P,W,drones,state:()=>state,L,start(){resetGame();setPlay()},spawnDrone,renderer}}
+    window.__game={qmOK:()=>QM_OK,fire,throwGrenade,GREN,bdmg:(n,w)=>damageDrone(boss,n,w),boss:()=>boss,spawnBoss,rockets,wave:()=>wave,veh:()=>Object.keys(VEH).length,zone:()=>Z,sw:switchWeapon,keys,die(){hurt(999,P.pos)},lvl:()=>level,phase:()=>phase,gate:()=>gate,quads,spawnQuad,wipe(){for(const d of foes)if(d.alive){d.alive=false;d.st='off';d.g.visible=false}toSpawn=0},sm:()=>!!SM,P,W,drones,state:()=>state,L,start(){resetGame();setPlay()},spawnDrone,renderer}}
   catch(e){console.error(e);$('go').textContent='Error al iniciar: '+e.message}}
 requestAnimationFrame(()=>setTimeout(boot,60));
 })();
