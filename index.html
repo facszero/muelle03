@@ -1322,12 +1322,12 @@ function updateQuads(dt){let alive=0;const px=P.pos.x,pz=P.pos.z;
       if(d.dt>9){d.st='off';d.g.visible=false}continue}
     alive++;let vx=0,vz=0;
     if(d.st==='move'){const dx=d.tgt.x-p.x,dz=d.tgt.z-p.z,l=Math.hypot(dx,dz);
-      if(l<.6||time>d.stT){d.st='hold';d.stT=time+RR(.7,1.6)}
+      if(l<.6||time>d.stT){d.st='hold';d.stT=time+RR(.7,1.6);d.fireT=Math.max(d.fireT,time+.6);d.stT=Math.min(time+2.4,Math.max(d.stT,d.fireT+.2))}
       else{vx=dx/l*4.4;vz=dz/l*4.4;if(time>d.chkT){if(Math.hypot(p.x-d.lx,p.z-d.lz)<.5)pickDest(d);d.lx=p.x;d.lz=p.z;d.chkT=time+.7}}}
     else if(d.st==='hold'&&d.burst===0&&time>d.stT){pickDest(d);d.st='move';d.stT=time+6;d.chkT=time+.7;d.lx=p.x;d.lz=p.z}
     if(d.st!=='drop'){
       if(time>d.losT){d.losT=time+.25;const ey=p.y+1.4;_a.set(px-p.x,P.pos.y+1.2-ey,pz-p.z);const dist=_a.length();_a.multiplyScalar(1/dist);d.los=dist<48&&!rayCols(p.x,ey,p.z,_a.x,_a.y,_a.z,dist).hit}
-      if(d.los&&time>d.fireT&&d.burst===0){d.burst=4;d.burstT=time}
+      if(d.st==='hold'&&d.los&&time>d.fireT&&d.burst===0){d.burst=4;d.burstT=time}
       if(d.burst>0&&time>=d.burstT){fireQuadBolt(d);d.burst--;d.burstT=time+.11;if(d.burst===0)d.fireT=time+RR(1.7,2.8)-Math.min(.7,(level-1)*.06)}}
     const acc=Math.min(1,dt*7);d.vel.x+=(vx-d.vel.x)*acc;d.vel.z+=(vz-d.vel.z)*acc;d.vy-=17*dt;p.x+=d.vel.x*dt;p.z+=d.vel.z*dt;p.y+=d.vy*dt;
     for(const e of foes){if(e===d||!e.alive)continue;const ex=p.x-e.pos.x,ez=p.z-e.pos.z,q=Math.hypot(ex,ez),m=e.q?1.5:1.1;if(q<m&&q>.01){p.x+=ex/q*(m-q)*.5;p.z+=ez/q*(m-q)*.5}}
@@ -1339,7 +1339,7 @@ function updateQuads(dt){let alive=0;const px=P.pos.x,pz=P.pos.z;
     d.ph+=(sp*2.6+.0)*dt;d.hitT=Math.max(0,d.hitT-dt);const dr=d.st==='drop'?1:0;
     d.bd.position.y=Math.sin(d.ph*2)*.018*mv+Math.sin(time*2.2+d.ph)*.008-d.hitT*.25;d.bd.rotation.z=Math.sin(d.ph)*.03*mv;d.bd.rotation.x=d.hitT*.5;
     for(const l of d.legs){const a=d.ph+l.o;l.hip.rotation.x=Math.sin(a)*.3*mv;l.hip.rotation.z=l.sx*(Math.max(0,Math.cos(a))*.24*mv+dr*.35)}
-    const ch=d.burst>0?1:clamp(1-(d.fireT-time)/.6,0,1),kk=d.hitT>0?14:2.4+ch*ch*13;d.eyeM.color.setRGB(kk,kk*(.1+ch*.1),kk*.05);
+    const ch=d.burst>0?1:d.st==='hold'?clamp(1-(d.fireT-time)/.6,0,1):0,kk=d.hitT>0?14:2.4+ch*ch*13;d.eyeM.color.setRGB(kk,kk*(.1+ch*.1),kk*.05);
     d.flT-=dt;d.fl.visible=d.flT>0}
   snd.hum(alive*1.6);return alive}
 
